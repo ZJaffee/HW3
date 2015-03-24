@@ -27,11 +27,13 @@ public class GameState implements Comparable<GameState> {
 	
 	private int xExtent;
 	private int yExtent;
-	private int supplyAmount;
-	private List<ResourceView> resources;
 	private int amountGold;
 	private int amountWood;
 	private int turn;
+	private int playernum;
+	private int requiredGold;
+	private int requiredWood;
+	private boolean buildPeasants;
     /**
      * Construct a GameState from a stateview object. This is used to construct the initial search node. All other
      * nodes should be constructed from the another constructor you create or by factory functions that you create.
@@ -44,13 +46,21 @@ public class GameState implements Comparable<GameState> {
      */
     public GameState(State.StateView state, int playernum, int requiredGold, int requiredWood, boolean buildPeasants) {
         // TODO: Implement me!
+    	//basic info
 		xExtent = state.getXExtent();
 		yExtent = state.getYExtent();
-		supplyAmount = state.getSupplyAmount(playernum);
-		resources = state.getAllResourceNodes();
+		turn = state.getTurnNumber();
+		
+		//goalstate
+		this.playernum = playernum;
+		this.requiredGold = requiredGold;
+		this.requiredWood = requiredWood;
+		this.buildPeasants = buildPeasants;
+		
+		//what we are trying to achieve
 		amountGold = state.getResourceAmount(playernum, ResourceType.GOLD);
 		amountWood = state.getResourceAmount(playernum, ResourceType.WOOD);
-		turn = state.getTurnNumber();
+		
 
     }
 
@@ -63,6 +73,8 @@ public class GameState implements Comparable<GameState> {
      */
     public boolean isGoal() {
         // TODO: Implement me!
+        if(amountGold>=requiredGold && amountWood >= requiredWood)
+        	return true;
         return false;
     }
 
@@ -112,7 +124,7 @@ public class GameState implements Comparable<GameState> {
     @Override
     public int compareTo(GameState o) {
         // TODO: Implement me!
-        return 0;
+        return Double.compare(this.getCost(),o.getCost());
     }
 
     /**
