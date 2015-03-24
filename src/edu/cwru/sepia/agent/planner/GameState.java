@@ -1,10 +1,14 @@
 package edu.cwru.sepia.agent.planner;
 
+
 import edu.cwru.sepia.environment.model.state.ResourceNode.ResourceView;
 import edu.cwru.sepia.environment.model.state.ResourceType;
 import edu.cwru.sepia.environment.model.state.State;
 
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * This class is used to represent the state of the game after applying one of the avaiable actions. It will also
@@ -86,9 +90,36 @@ public class GameState implements Comparable<GameState> {
      */
     public List<GameState> generateChildren() {
         // TODO: Implement me!
-        return null;
+        List<GameState> toReturn = new ArrayList<GameState>();
+		return toReturn;
+        
+    }
+/*
+ *     private Set<MapLocation> getSucessors(MapLocation current, MapLocation enemyFootmanLoc, Set<MapLocation> resourceLocations, int xExtent, int yExtent)
+    {
+    	//Initialize the returned set
+    	Set<MapLocation> toReturn = new HashSet<MapLocation>();
+    	//We must check all the grid locations around current
+    	//-- up, down, left, right, and diagonoals
+    	for(int i = -1; i<=1; i++)
+    	{
+    		for(int j = -1; j<=1; j++)
+    		{
+    			//Make the map location of this potential succesor
+    			MapLocation loc = new MapLocation(current.x+i,current.y+j);
+    			//Check if there's anything already in this potential successor
+    			if(isValidLocation(current, loc, enemyFootmanLoc, resourceLocations, xExtent,  yExtent))
+    			{
+    				//If there's nothing at loc, it is a successor, so add it to the return set
+    				toReturn.add(loc);
+    			}
+    		}
+    	}
+    	return toReturn;
+    	
     }
 
+ */
     /**
      * Write your heuristic function here. Remember this must be admissible for the properties of A* to hold. If you
      * can come up with an easy way of computing a consistent heuristic that is even better, but not strictly necessary.
