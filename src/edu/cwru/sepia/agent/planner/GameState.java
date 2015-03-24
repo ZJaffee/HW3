@@ -1,5 +1,7 @@
 package edu.cwru.sepia.agent.planner;
 
+import edu.cwru.sepia.environment.model.state.ResourceNode.ResourceView;
+import edu.cwru.sepia.environment.model.state.ResourceType;
 import edu.cwru.sepia.environment.model.state.State;
 
 import java.util.List;
@@ -22,7 +24,14 @@ import java.util.List;
  * class/structure you use to represent actions.
  */
 public class GameState implements Comparable<GameState> {
-
+	
+	private int xExtent;
+	private int yExtent;
+	private int supplyAmount;
+	private List<ResourceView> resources;
+	private int amountGold;
+	private int amountWood;
+	private int turn;
     /**
      * Construct a GameState from a stateview object. This is used to construct the initial search node. All other
      * nodes should be constructed from the another constructor you create or by factory functions that you create.
@@ -35,6 +44,14 @@ public class GameState implements Comparable<GameState> {
      */
     public GameState(State.StateView state, int playernum, int requiredGold, int requiredWood, boolean buildPeasants) {
         // TODO: Implement me!
+		xExtent = state.getXExtent();
+		yExtent = state.getYExtent();
+		supplyAmount = state.getSupplyAmount(playernum);
+		resources = state.getAllResourceNodes();
+		amountGold = state.getResourceAmount(playernum, ResourceType.GOLD);
+		amountWood = state.getResourceAmount(playernum, ResourceType.WOOD);
+		turn = state.getTurnNumber();
+
     }
 
     /**
