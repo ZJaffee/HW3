@@ -1,9 +1,12 @@
 package edu.cwru.sepia.agent.planner;
 
 
+import edu.cwru.sepia.environment.model.state.ResourceNode.Type;
+import edu.cwru.sepia.agent.planner.Peasant.Item;
 import edu.cwru.sepia.environment.model.state.ResourceNode.ResourceView;
 import edu.cwru.sepia.environment.model.state.ResourceType;
 import edu.cwru.sepia.environment.model.state.State;
+import edu.cwru.sepia.environment.model.state.Unit.UnitView;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -29,15 +32,19 @@ import java.util.Set;
  */
 public class GameState implements Comparable<GameState> {
 	
-	private int xExtent;
-	private int yExtent;
-	private int amountGold;
-	private int amountWood;
+	public final int xExtent;
+	public final int yExtent;
+	public final int amountGold;
+	public final int amountWood;
 	private int turn;
-	private int playernum;
-	private int requiredGold;
-	private int requiredWood;
+	public final int playernum;
+	public final int requiredGold;
+	public final int requiredWood;
 	private boolean buildPeasants;
+	private List<Peasant> peasants;
+	private Set<Resource> mines;
+	private Set<Resource> forests;
+	
     /**
      * Construct a GameState from a stateview object. This is used to construct the initial search node. All other
      * nodes should be constructed from the another constructor you create or by factory functions that you create.
@@ -65,10 +72,62 @@ public class GameState implements Comparable<GameState> {
 		amountGold = state.getResourceAmount(playernum, ResourceType.GOLD);
 		amountWood = state.getResourceAmount(playernum, ResourceType.WOOD);
 		
-
+		setPeasants(state.getUnits(playernum));
+		setResources(state.getAllResourceNodes());
+    }
+    
+    public GameState(GameState original, Peasant toRemove, Peasant toAdd){
+    	// TODO: Implement me!
+    	//basic info
+		xExtent = original.xExtent;
+		yExtent = original.yExtent;
+		turn = original.turn + 1;
+		
+		//goalstate
+		this.playernum = original.playernum;
+		this.requiredGold = original.requiredGold;
+		this.requiredWood = original.requiredWood;
+		this.buildPeasants = original.buildPeasants;
+		
+		//what we are trying to achieve
+		amountGold = original.amountGold;
+		amountWood = original.amountWood;
+				
+		peasants = new ArrayList<Peasant>();
+		peasants.addAll(original.peasants);
+		peasants.remove(toRemove);
+		peasants.add(toAdd);
+		
+		mines = original.mines;
+		forests = original.forests;
     }
 
-    /**
+    private void setResources(List<ResourceView> allResourceNodes) {
+		mines = new HashSet<Resource>();
+		forests = new HashSet<Resource>();
+		for(ResourceView rv : allResourceNodes){
+			switch(rv.getType()){
+				case GOLD_MINE:
+					mines.add(new Resource(rv));
+					break;
+				case TREE:
+					forests.add(new Resource(rv));
+					break;
+				default:
+					System.out.println("Error: Unknown resource type.");
+			}
+		}
+		
+	}
+	
+	private void setPeasants(List<UnitView> units){
+		peasants = new ArrayList<Peasant>();
+		for(UnitView unit : units){
+			peasants.add(new Peasant(unit, Item.NOTHING));
+		}
+	}
+
+	/**
      * Unlike in the first A* assignment there are many possible goal states. As long as the wood and gold requirements
      * are met the peasants can be at any location and the capacities of the resource locations can be anything. Use
      * this function to check if the goal conditions are met and return true if they are.
@@ -181,4 +240,9 @@ public class GameState implements Comparable<GameState> {
         // TODO: Implement me!
         return 0;
     }
+
+	public boolean resourceAt(Position north) {
+		Resource dummy = new Resource(north, -1, -1);
+		return mines.contains(dummy) || forests.contains(dummy);
+	}
 }

@@ -92,7 +92,7 @@ public class PlannerAgent extends Agent {
      */
     private Stack<StripsAction> AstarSearch(GameState startState) {
         // TODO: Implement me!
-        return null;
+        return new Stack<StripsAction>();
     }
 
     /**
