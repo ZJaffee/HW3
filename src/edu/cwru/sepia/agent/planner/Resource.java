@@ -7,17 +7,20 @@ public class Resource {
 	public final Position pos;
 	public final int amount;
 	public final int id;
+	public final Type type;
 	
 	public Resource(ResourceView rv){
 		id = rv.getID();
 		pos = new Position(rv.getXPosition(), rv.getYPosition());
 		amount = rv.getAmountRemaining();
+		type = rv.getType();
 	}
 	
-	public Resource(Position p, int amnt, int myID){
+	public Resource(int myID, Position p, int amnt, Type t){
 		pos = p;
 		amount = amnt;
 		id = myID;
+		type = t;
 	}
 	
 	@Override

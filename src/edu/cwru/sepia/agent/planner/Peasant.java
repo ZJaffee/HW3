@@ -26,4 +26,8 @@ public class Peasant{
 		}
 		return false;
 	}
+
+	public boolean hasNothing() {
+		return carrying == Item.NOTHING;
+	}
 }

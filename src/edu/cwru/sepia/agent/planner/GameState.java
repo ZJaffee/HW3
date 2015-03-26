@@ -41,9 +41,9 @@ public class GameState implements Comparable<GameState> {
 	public final int requiredGold;
 	public final int requiredWood;
 	private boolean buildPeasants;
-	private List<Peasant> peasants;
-	private Set<Resource> mines;
-	private Set<Resource> forests;
+	public List<Peasant> peasants;
+	public Set<Resource> mines;
+	public Set<Resource> forests;
 	
     /**
      * Construct a GameState from a stateview object. This is used to construct the initial search node. All other
@@ -76,7 +76,7 @@ public class GameState implements Comparable<GameState> {
 		setResources(state.getAllResourceNodes());
     }
     
-    public GameState(GameState original, Peasant toRemove, Peasant toAdd){
+    public GameState(GameState original, Peasant pToRemove, Peasant pToAdd){
     	// TODO: Implement me!
     	//basic info
 		xExtent = original.xExtent;
@@ -95,11 +95,31 @@ public class GameState implements Comparable<GameState> {
 				
 		peasants = new ArrayList<Peasant>();
 		peasants.addAll(original.peasants);
-		peasants.remove(toRemove);
-		peasants.add(toAdd);
+		peasants.remove(pToRemove);
+		peasants.add(pToAdd);
 		
 		mines = original.mines;
 		forests = original.forests;
+    }
+    
+    public GameState(GameState original, Peasant pToRemove, Peasant pToAdd, Resource rToRemove, Resource rToAdd){
+    	this(original, pToRemove, pToAdd);
+    	switch(rToRemove.type){
+    		case TREE:
+    			forests = new HashSet<Resource>();
+    			forests.addAll(original.forests);
+    			forests.remove(rToRemove);
+    			forests.add(rToAdd);
+    			break;
+    		case GOLD_MINE:
+    			mines = new HashSet<Resource>();
+    			mines.addAll(original.mines);
+    			mines.remove(rToRemove);
+    			mines.add(rToAdd);
+    			break;
+    		default:
+    			System.out.println("Error: unkown resource type;");
+    	}
     }
 
     private void setResources(List<ResourceView> allResourceNodes) {
@@ -242,7 +262,7 @@ public class GameState implements Comparable<GameState> {
     }
 
 	public boolean resourceAt(Position north) {
-		Resource dummy = new Resource(north, -1, -1);
+		Resource dummy = new Resource(-1, north, -1, null);
 		return mines.contains(dummy) || forests.contains(dummy);
 	}
 }
