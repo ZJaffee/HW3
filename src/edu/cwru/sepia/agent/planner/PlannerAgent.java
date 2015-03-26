@@ -2,6 +2,9 @@ package edu.cwru.sepia.agent.planner;
 
 import edu.cwru.sepia.action.Action;
 import edu.cwru.sepia.agent.Agent;
+import edu.cwru.sepia.agent.planner.actions.Harvest;
+import edu.cwru.sepia.agent.planner.actions.Harvest_Wood;
+import edu.cwru.sepia.agent.planner.actions.Move_To_Townhall;
 import edu.cwru.sepia.agent.planner.actions.StripsAction;
 import edu.cwru.sepia.environment.model.history.History;
 import edu.cwru.sepia.environment.model.state.State;
@@ -114,7 +117,6 @@ public class PlannerAgent extends Agent {
     		//remove() for a priority queue will remove the best location
     		//based on the .compareTo() function we have defined
     		current = openSet.remove();
-    		
     		//If this is the goal, we've completed the search
     		if(current.isGoal())
     		{
@@ -149,9 +151,10 @@ public class PlannerAgent extends Agent {
     }
     private Stack<StripsAction> reconstructPath(GameState current) {
 		Stack<StripsAction> actions = new Stack<StripsAction>();
-		StripsAction parent;
-		while( (parent = current.action) != null){
-			actions.push(parent);
+		GameState parent = current;
+		while( parent.parent != null ){
+			actions.push(parent.action);
+			parent = parent.parent;
 		}
 		return actions;
 	}
@@ -166,7 +169,8 @@ public class PlannerAgent extends Agent {
      * @param plan Stack of Strips Actions that are written to the text file.
      */
     private void savePlan(Stack<StripsAction> plan) {
-        if (plan == null) {
+        return;/*
+    	if (plan == null) {
             System.err.println("Cannot save null plan");
             return;
         }
@@ -193,6 +197,6 @@ public class PlannerAgent extends Agent {
         } finally {
             if (outputWriter != null)
                 outputWriter.close();
-        }
+        }*/
     }
 }

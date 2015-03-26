@@ -22,16 +22,5 @@ public class Harvest_Wood extends Harvest{
 	}
 	
 
-	public static List<Resource> adjacent_forests(Peasant p, GameState state){
-		List<Resource> adj_forests = new LinkedList<Resource>();
-		for(Resource forest : state.forests){
-			if(forest.pos.chebyshevDistance(p.pos) == 1 && forest.amount > 0){
-				adj_forests.add(forest);
-			}
-		}
-		
-		return adj_forests;
-	}
-
 
 }

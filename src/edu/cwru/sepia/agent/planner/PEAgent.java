@@ -4,10 +4,12 @@ import edu.cwru.sepia.action.Action;
 import edu.cwru.sepia.agent.Agent;
 import edu.cwru.sepia.agent.planner.actions.*;
 import edu.cwru.sepia.environment.model.history.History;
+import edu.cwru.sepia.environment.model.state.ResourceNode.ResourceView;
 import edu.cwru.sepia.environment.model.state.ResourceType;
 import edu.cwru.sepia.environment.model.state.State;
 import edu.cwru.sepia.environment.model.state.Template;
 import edu.cwru.sepia.environment.model.state.Unit;
+import edu.cwru.sepia.environment.model.state.Unit.UnitView;
 
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -96,8 +98,17 @@ public class PEAgent extends Agent {
     	StripsAction action;
         int i = 1;
     	while( !plan.isEmpty() ){
+    		/*for(UnitView unit : stateView.getAllUnits()){
+    			wait_loop:
+    			while(true){
+	    			if(!(unit.getCurrentDurativeAction() != null && unit.getCurrentDurativeProgress() < 1)){
+	    				break wait_loop;
+	    			}
+    			}
+    			System.out.println(unit.getCurrentDurativeAction());
+    		}*/
         	action = plan.pop();
-        	toReturn.put(i, createSepiaAction(action));
+        	toReturn.put(i, createSepiaAction(action, stateView));
         	peasantIdMap.put(i, action.getPeasantId());
         }
     	return toReturn;
@@ -108,8 +119,65 @@ public class PEAgent extends Agent {
      * @param action StripsAction
      * @return SEPIA representation of same action
      */
-    private Action createSepiaAction(StripsAction action) {
-        return action.getSepiaAction();
+    private Action createSepiaAction(StripsAction action, State.StateView stateView) {
+       /* You can create a SEPIA deposit action with the following method
+        * Action.createPrimitiveDeposit(int peasantId, Direction townhallDirection)
+        *
+        * You can create a SEPIA harvest action with the following method
+        * Action.createPrimitiveGather(int peasantId, Direction resourceDirection)
+        *
+        * You can create a SEPIA build action with the following method
+        * Action.createPrimitiveProduction(int townhallId, int peasantTemplateId)
+        *
+        * You can create a SEPIA move action with the following method
+        * Action.createCompoundMove(int peasantId, int x, int y)
+        */
+    	UnitView peasant = null;
+    	UnitView townhall = null;
+    	Position peasantPos = null;
+    	for(UnitView c : stateView.getAllUnits()){
+    		if(c.getID() == action.getPeasantId()){
+    			peasant = c;
+    			peasantPos = new Position(peasant.getXPosition(), peasant.getYPosition());
+    		}else if(!c.getTemplateView().canMove()){
+    			townhall = c;
+    		}
+    	}
+    	if(action instanceof Harvest){
+    		Harvest hAction = (Harvest) action;
+    		ResourceView toHarvest = null;
+    		for(ResourceView rv : stateView.getAllResourceNodes()){
+    			if(rv.getID() == hAction.resource.id){
+    				toHarvest = rv;
+    				break;
+    			}
+    		}
+    		Position resourcePos = new Position(toHarvest.getXPosition(), toHarvest.getYPosition());
+    		return Action.createPrimitiveGather(action.getPeasantId(), peasantPos.getDirection(resourcePos));
+    	}
+    	
+    	if(action instanceof Move_To_Resource){
+    		Move_To_Resource mAction = (Move_To_Resource) action;
+    		ResourceView moveTo = null;
+    		for(ResourceView rv : stateView.getAllResourceNodes()){
+    			if(rv.getID() == mAction.toResource){
+    				moveTo = rv;
+    				break;
+    			}
+    		}
+    		return Action.createCompoundMove(action.getPeasantId(), moveTo.getXPosition(), moveTo.getYPosition());
+    	}
+    	
+    	if(action instanceof Move_To_Townhall){
+    		return Action.createCompoundMove(action.getPeasantId(), townhall.getXPosition(), townhall.getYPosition());
+    	}
+    	
+    	if(action instanceof Deposit){
+    		Position townhallPos = new Position(townhall.getXPosition(), townhall.getYPosition());
+    		return Action.createPrimitiveDeposit(action.getPeasantId(), peasantPos.getDirection(townhallPos));
+    	}
+    	
+    	return null;
     }
 
     @Override

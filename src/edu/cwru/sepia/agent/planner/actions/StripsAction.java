@@ -39,7 +39,4 @@ public interface StripsAction {
      */
     public GameState apply(GameState state);
     
-    public int getPeasantId();
-
-	//public Action getSepiaAction();
-}
+    public int getPeasantId();}

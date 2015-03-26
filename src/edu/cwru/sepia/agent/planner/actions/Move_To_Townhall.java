@@ -6,26 +6,24 @@ import edu.cwru.sepia.agent.planner.Resource;
 import edu.cwru.sepia.util.Direction;
 
 
-public class Move implements StripsAction{
+public class Move_To_Townhall implements StripsAction{
 	public final Peasant peasant;
-	public final Direction dir;
-	private Position pos_in_dir;
+	public final int townhall;
 	
-	public Move(Peasant p, Direction d){
+	public Move_To_Townhall(Peasant p, int townhallId){
 		peasant = p;
-		dir = d;
-		pos_in_dir = peasant.pos.move(dir);
+		townhall = townhallId;
 	}
 	
 	@Override
 	public boolean preconditionsMet(GameState state) {
-		return pos_in_dir.inBounds(state.xExtent, state.yExtent) && !state.resourceAt(pos_in_dir);
+		return (peasant.isAtTownhall != townhall);
 			
 	}
 
 	@Override
 	public GameState apply(GameState state) {
-		return new GameState(state, peasant, new Peasant(peasant.id, pos_in_dir, peasant.carrying), this);
+		return new GameState(state, peasant, new Peasant(peasant.id, peasant.carrying, -1, townhall), this);
 	}
 	
 	@Override

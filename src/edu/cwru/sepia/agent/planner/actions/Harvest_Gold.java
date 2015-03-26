@@ -21,16 +21,6 @@ public class Harvest_Gold extends Harvest{
 		return Item.GOLD;
 	}
 	
-	public static List<Resource> adjacent_mines(Peasant p, GameState state){
-		List<Resource> adj_mines = new LinkedList<Resource>();
-		for(Resource gold : state.mines){
-			if(gold.pos.chebyshevDistance(p.pos) == 1 && gold.amount > 0){
-				adj_mines.add(gold);
-			}
-		}
-		
-		return adj_mines;
-	}
 
 
 }

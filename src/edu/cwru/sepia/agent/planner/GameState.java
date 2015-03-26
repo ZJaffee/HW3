@@ -6,7 +6,8 @@ import edu.cwru.sepia.agent.planner.Peasant.Item;
 import edu.cwru.sepia.agent.planner.actions.Deposit;
 import edu.cwru.sepia.agent.planner.actions.Harvest_Gold;
 import edu.cwru.sepia.agent.planner.actions.Harvest_Wood;
-import edu.cwru.sepia.agent.planner.actions.Move;
+import edu.cwru.sepia.agent.planner.actions.Move_To_Resource;
+import edu.cwru.sepia.agent.planner.actions.Move_To_Townhall;
 import edu.cwru.sepia.agent.planner.actions.StripsAction;
 import edu.cwru.sepia.environment.model.state.ResourceNode.ResourceView;
 import edu.cwru.sepia.environment.model.state.ResourceType;
@@ -42,8 +43,8 @@ public class GameState implements Comparable<GameState> {
 	
 	public final int xExtent;
 	public final int yExtent;
-	public final int amountGold;
-	public final int amountWood;
+	public int amountGold;
+	public int amountWood;
 	private int turn;
 	public final int playernum;
 	public final int requiredGold;
@@ -54,6 +55,7 @@ public class GameState implements Comparable<GameState> {
 	public Set<Resource> forests;
 	public Townhall townhall;
 	public StripsAction action;
+	public GameState parent;
 	
     /**
      * Construct a GameState from a stateview object. This is used to construct the initial search node. All other
@@ -83,6 +85,7 @@ public class GameState implements Comparable<GameState> {
 		amountWood = state.getResourceAmount(playernum, ResourceType.WOOD);
 		
 		action = null;
+		parent = null;
 		
 		setPeasants(state.getUnits(playernum));
 		setResources(state.getAllResourceNodes());
@@ -113,7 +116,10 @@ public class GameState implements Comparable<GameState> {
 		mines = original.mines;
 		forests = original.forests;
 		
+		townhall = original.townhall;
+		
 		this.action = action;
+		parent = original;
     }
     
     public GameState(GameState original, Peasant pToRemove, Peasant pToAdd, Resource rToRemove, Resource rToAdd, StripsAction action){
@@ -195,10 +201,10 @@ public class GameState implements Comparable<GameState> {
         		GameState cur = currQ.remove(0);
         		nextQ.addAll(getAllMoves(p,cur));
         	}
-        	currQ = nextQ;
+        	currQ.addAll(nextQ);
         	nextQ.clear();
         }
-		return nextQ;
+		return currQ;
         
     }
     
@@ -206,34 +212,38 @@ public class GameState implements Comparable<GameState> {
 		List<GameState> validMoves = new LinkedList<GameState>();
 		StripsAction curMove;
 		
-		//Get all Move moves
-    	for(Direction d : Direction.values()){
-    		curMove = new Move(p, d);
+		//Get all Move and Harverst moves
+    	for(Resource r : cur.mines){
+    		curMove = new Move_To_Resource(p, r.id);
+    		if(curMove.preconditionsMet(cur)){
+    			validMoves.add(curMove.apply(cur));
+    		}
+    		
+    		curMove = new Harvest_Gold(p, r);
     		if(curMove.preconditionsMet(cur)){
     			validMoves.add(curMove.apply(cur));
     		}
     	}
     	
-    	//Get all harvest wood moves
-    	List<Resource> adj_woods = Harvest_Wood.adjacent_forests(p,cur);
-    	for(Resource wood : adj_woods){
-    		curMove = new Harvest_Wood(p, wood);
+    	for(Resource r : cur.forests){
+    		curMove = new Move_To_Resource(p, r.id);
+    		if(curMove.preconditionsMet(cur)){
+    			validMoves.add(curMove.apply(cur));
+    		}
+    		
+    		curMove = new Harvest_Wood(p, r);
     		if(curMove.preconditionsMet(cur)){
     			validMoves.add(curMove.apply(cur));
     		}
     	}
     	
-    	//Get all harvest gold moves
-    	List<Resource> adj_mines = Harvest_Gold.adjacent_mines(p,cur);
-    	for(Resource mine : adj_mines){
-    		curMove = new Harvest_Wood(p, mine);
-    		if(curMove.preconditionsMet(cur)){
-    			validMoves.add(curMove.apply(cur));
-    		}
-    	}
+    	curMove = new Move_To_Townhall(p, cur.townhall.id);
+    	if(curMove.preconditionsMet(cur)){
+			validMoves.add(curMove.apply(cur));
+		}
     	
     	//Add deposit if possible
-    	curMove = new Deposit(p);
+    	curMove = new Deposit(p, cur.townhall);
     	if(curMove.preconditionsMet(cur)){
 			validMoves.add(curMove.apply(cur));
 		}

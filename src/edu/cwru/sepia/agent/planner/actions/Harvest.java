@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
+import edu.cwru.sepia.action.Action;
 import edu.cwru.sepia.agent.planner.GameState;
 import edu.cwru.sepia.agent.planner.Peasant;
 import edu.cwru.sepia.agent.planner.Peasant.Item;
@@ -21,14 +22,14 @@ public abstract class Harvest implements StripsAction{
 	
 	@Override
 	public boolean preconditionsMet(GameState state) {
-		return peasant.hasNothing() && peasant.pos.isAdjacent(resource.pos) && resource.amount > 0;
+		return peasant.hasNothing() && peasant.isAtResource == resource.id && resource.amount > 0;
 	}
 	
 	protected abstract Item getResourceType();
 
 	@Override
 	public GameState apply(GameState state) {
-		Peasant p = new Peasant(peasant.id, peasant.pos, getResourceType());
+		Peasant p = new Peasant(peasant.id, getResourceType(), peasant.isAtResource, -1);
 		Resource r = new Resource(resource.id, resource.pos, resource.amount - 100, resource.type);
 		return new GameState(state, peasant, p, resource, r, this);
 	}
