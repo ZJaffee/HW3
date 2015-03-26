@@ -32,18 +32,5 @@ public abstract class Harvest implements StripsAction{
 		Resource r = new Resource(resource.id, resource.pos, resource.amount - 100, resource.type);
 		return new GameState(state, peasant, p, resource, r);
 	}
-	
-	protected abstract Set<Resource> getResourceList(GameState state);
-	
-	public List<Resource> adjacent_forests(Peasant p, GameState state){
-		List<Resource> adj_forests = new ArrayList<Resource>();
-		for(Resource gold : getResourceList(state)){
-			if(gold.pos.chebyshevDistance(p.pos) == 1 && gold.amount > 0){
-				adj_forests.add(gold);
-			}
-		}
-		
-		return adj_forests;
-	}
 
 }

@@ -1,5 +1,8 @@
 package edu.cwru.sepia.agent.planner.actions;
 
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Set;
 
 import edu.cwru.sepia.agent.planner.GameState;
@@ -18,9 +21,16 @@ public class Harvest_Wood extends Harvest{
 		return Item.WOOD;
 	}
 	
-	@Override
-	protected Set<Resource> getResourceList(GameState state){
-		return state.forests;
+
+	public static List<Resource> adjacent_forests(Peasant p, GameState state){
+		List<Resource> adj_forests = new LinkedList<Resource>();
+		for(Resource forest : state.forests){
+			if(forest.pos.chebyshevDistance(p.pos) == 1 && forest.amount > 0){
+				adj_forests.add(forest);
+			}
+		}
+		
+		return adj_forests;
 	}
 
 

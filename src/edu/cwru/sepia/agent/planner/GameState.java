@@ -3,13 +3,21 @@ package edu.cwru.sepia.agent.planner;
 
 import edu.cwru.sepia.environment.model.state.ResourceNode.Type;
 import edu.cwru.sepia.agent.planner.Peasant.Item;
+import edu.cwru.sepia.agent.planner.actions.Deposit;
+import edu.cwru.sepia.agent.planner.actions.Harvest_Gold;
+import edu.cwru.sepia.agent.planner.actions.Harvest_Wood;
+import edu.cwru.sepia.agent.planner.actions.Move;
+import edu.cwru.sepia.agent.planner.actions.StripsAction;
 import edu.cwru.sepia.environment.model.state.ResourceNode.ResourceView;
 import edu.cwru.sepia.environment.model.state.ResourceType;
 import edu.cwru.sepia.environment.model.state.State;
 import edu.cwru.sepia.environment.model.state.Unit.UnitView;
+import edu.cwru.sepia.util.Direction;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
@@ -175,10 +183,60 @@ public class GameState implements Comparable<GameState> {
      */
     public List<GameState> generateChildren() {
         // TODO: Implement me!
-        List<GameState> toReturn = new ArrayList<GameState>();
-		return toReturn;
+        List<GameState> nextQ = new LinkedList<GameState>();
+        List<GameState> currQ = new LinkedList<GameState>();
+        currQ.add(this);
+        for(Peasant p : peasants){
+        	while(!currQ.isEmpty()){
+        		GameState cur = currQ.remove(0);
+        		nextQ.addAll(getAllMoves(p,cur));
+        	}
+        	currQ = nextQ;
+        	nextQ.clear();
+        }
+		return nextQ;
         
     }
+    
+    private List<GameState> getAllMoves(Peasant p, GameState cur) {
+		List<GameState> validMoves = new LinkedList<GameState>();
+		StripsAction curMove;
+		
+		//Get all Move moves
+    	for(Direction d : Direction.values()){
+    		curMove = new Move(p, d);
+    		if(curMove.preconditionsMet(cur)){
+    			validMoves.add(curMove.apply(cur));
+    		}
+    	}
+    	
+    	//Get all harvest wood moves
+    	List<Resource> adj_woods = Harvest_Wood.adjacent_forests(p,cur);
+    	for(Resource wood : adj_woods){
+    		curMove = new Harvest_Wood(p, wood);
+    		if(curMove.preconditionsMet(cur)){
+    			validMoves.add(curMove.apply(cur));
+    		}
+    	}
+    	
+    	//Get all harvest gold moves
+    	List<Resource> adj_mines = Harvest_Gold.adjacent_mines(p,cur);
+    	for(Resource mine : adj_mines){
+    		curMove = new Harvest_Wood(p, mine);
+    		if(curMove.preconditionsMet(cur)){
+    			validMoves.add(curMove.apply(cur));
+    		}
+    	}
+    	
+    	//Add deposit if possible
+    	curMove = new Deposit(p);
+    	if(curMove.preconditionsMet(cur)){
+			validMoves.add(curMove.apply(cur));
+		}
+    	
+		return validMoves;
+	}
+
 /*
  *     private Set<MapLocation> getSucessors(MapLocation current, MapLocation enemyFootmanLoc, Set<MapLocation> resourceLocations, int xExtent, int yExtent)
     {
@@ -267,8 +325,8 @@ public class GameState implements Comparable<GameState> {
         return 0;
     }
 
-	public boolean resourceAt(Position north) {
-		Resource dummy = new Resource(-1, north, -1, null);
+	public boolean resourceAt(Position pos) {
+		Resource dummy = new Resource(-1, pos, -1, null);
 		return mines.contains(dummy) || forests.contains(dummy);
 	}
 }

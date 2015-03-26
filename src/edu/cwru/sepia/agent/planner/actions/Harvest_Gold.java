@@ -1,5 +1,8 @@
 package edu.cwru.sepia.agent.planner.actions;
 
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Set;
 
 import edu.cwru.sepia.agent.planner.GameState;
@@ -18,9 +21,15 @@ public class Harvest_Gold extends Harvest{
 		return Item.GOLD;
 	}
 	
-	@Override
-	protected Set<Resource> getResourceList(GameState state){
-		return state.mines;
+	public static List<Resource> adjacent_mines(Peasant p, GameState state){
+		List<Resource> adj_mines = new LinkedList<Resource>();
+		for(Resource gold : state.mines){
+			if(gold.pos.chebyshevDistance(p.pos) == 1 && gold.amount > 0){
+				adj_mines.add(gold);
+			}
+		}
+		
+		return adj_mines;
 	}
 
 
