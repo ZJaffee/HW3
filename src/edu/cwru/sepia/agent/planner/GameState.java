@@ -53,6 +53,7 @@ public class GameState implements Comparable<GameState> {
 	public Set<Resource> mines;
 	public Set<Resource> forests;
 	public Townhall townhall;
+	public StripsAction action;
 	
     /**
      * Construct a GameState from a stateview object. This is used to construct the initial search node. All other
@@ -81,12 +82,13 @@ public class GameState implements Comparable<GameState> {
 		amountGold = state.getResourceAmount(playernum, ResourceType.GOLD);
 		amountWood = state.getResourceAmount(playernum, ResourceType.WOOD);
 		
+		action = null;
 		
 		setPeasants(state.getUnits(playernum));
 		setResources(state.getAllResourceNodes());
     }
     
-    public GameState(GameState original, Peasant pToRemove, Peasant pToAdd){
+    public GameState(GameState original, Peasant pToRemove, Peasant pToAdd, StripsAction action){
     	// TODO: Implement me!
     	//basic info
 		xExtent = original.xExtent;
@@ -110,10 +112,12 @@ public class GameState implements Comparable<GameState> {
 		
 		mines = original.mines;
 		forests = original.forests;
+		
+		this.action = action;
     }
     
-    public GameState(GameState original, Peasant pToRemove, Peasant pToAdd, Resource rToRemove, Resource rToAdd){
-    	this(original, pToRemove, pToAdd);
+    public GameState(GameState original, Peasant pToRemove, Peasant pToAdd, Resource rToRemove, Resource rToAdd, StripsAction action){
+    	this(original, pToRemove, pToAdd, action);
     	switch(rToRemove.type){
     		case TREE:
     			forests = new HashSet<Resource>();
@@ -272,8 +276,7 @@ public class GameState implements Comparable<GameState> {
      * @return The value estimated remaining cost to reach a goal state from this state.
      */
     public double heuristic() {
-        // TODO: Implement me!
-        return 0.0;
+        return requiredGold - amountGold + requiredWood - amountWood;
     }
 
     /**
@@ -284,8 +287,7 @@ public class GameState implements Comparable<GameState> {
      * @return The current cost to reach this goal
      */
     public double getCost() {
-        // TODO: Implement me!
-        return 0.0;
+        return turn * 40.0;
     }
 
     /**
@@ -298,7 +300,7 @@ public class GameState implements Comparable<GameState> {
     @Override
     public int compareTo(GameState o) {
         // TODO: Implement me!
-        return Double.compare(this.getCost(),o.getCost());
+        return Double.compare(this.getCost() + this.heuristic(),o.getCost() + o.heuristic());
     }
 
     /**
@@ -309,7 +311,17 @@ public class GameState implements Comparable<GameState> {
      */
     @Override
     public boolean equals(Object o) {
-        // TODO: Implement me!
+        if(o instanceof GameState){
+        	GameState g = (GameState) o;
+        	if(amountWood != g.amountWood || amountGold != g.amountGold)
+        		return false;
+        	for(Peasant p : peasants){
+        		if(!g.peasants.contains(p)){
+        			return false;
+        		}
+        	}
+        	return true;
+        }
         return false;
     }
 

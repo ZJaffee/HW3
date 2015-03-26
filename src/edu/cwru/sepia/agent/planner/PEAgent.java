@@ -92,8 +92,15 @@ public class PEAgent extends Agent {
      */
     @Override
     public Map<Integer, Action> middleStep(State.StateView stateView, History.HistoryView historyView) {
-        // TODO: Implement me!
-        return new HashMap<Integer, Action>();
+        Map<Integer, Action> toReturn = new HashMap<Integer, Action>();
+    	StripsAction action;
+        int i = 1;
+    	while( !plan.isEmpty() ){
+        	action = plan.pop();
+        	toReturn.put(i, createSepiaAction(action));
+        	peasantIdMap.put(i, action.getPeasantId());
+        }
+    	return toReturn;
     }
 
     /**
@@ -102,7 +109,7 @@ public class PEAgent extends Agent {
      * @return SEPIA representation of same action
      */
     private Action createSepiaAction(StripsAction action) {
-        return null;
+        return action.getSepiaAction();
     }
 
     @Override

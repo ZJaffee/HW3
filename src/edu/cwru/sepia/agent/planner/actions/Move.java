@@ -25,7 +25,12 @@ public class Move implements StripsAction{
 
 	@Override
 	public GameState apply(GameState state) {
-		return new GameState(state, peasant, new Peasant(peasant.id, pos_in_dir, peasant.carrying));
+		return new GameState(state, peasant, new Peasant(peasant.id, pos_in_dir, peasant.carrying), this);
+	}
+	
+	@Override
+	public int getPeasantId(){
+		return peasant.id;
 	}
 
 }

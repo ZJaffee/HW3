@@ -22,7 +22,7 @@ public class Peasant{
 	@Override
 	public boolean equals(Object o){
 		if(o instanceof Peasant){
-			return id == ((Peasant)o).id;
+			return id == ((Peasant)o).id && pos.equals(((Peasant)o).pos);
 		}
 		return false;
 	}

@@ -19,7 +19,7 @@ public class Deposit implements StripsAction{
 	@Override
 	public GameState apply(GameState state) {
 		Peasant p = new Peasant(peasant.id, peasant.pos, Item.NOTHING);
-		GameState toReturn = new GameState(state, peasant, p);
+		GameState toReturn = new GameState(state, peasant, p, this);
 		
 		switch(peasant.carrying){
 			case WOOD:
@@ -33,5 +33,10 @@ public class Deposit implements StripsAction{
 		}
 		
 		return toReturn;
+	}
+	
+	@Override
+	public int getPeasantId(){
+		return peasant.id;
 	}
 }

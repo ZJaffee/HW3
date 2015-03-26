@@ -1,6 +1,8 @@
 package edu.cwru.sepia.agent.planner.actions;
 
+import edu.cwru.sepia.action.Action;
 import edu.cwru.sepia.agent.planner.GameState;
+import edu.cwru.sepia.agent.planner.Peasant;
 
 /**
  * A useful start of an interface representing strips actions. You may add new methods to this interface if needed, but
@@ -8,7 +10,6 @@ import edu.cwru.sepia.agent.planner.GameState;
  * of a StripsAction.
  */
 public interface StripsAction {
-
     /**
      * Returns true if the provided GameState meets all of the necessary conditions for this action to successfully
      * execute.
@@ -37,4 +38,8 @@ public interface StripsAction {
      * @return State resulting from successful action appliction.
      */
     public GameState apply(GameState state);
+    
+    public int getPeasantId();
+
+	//public Action getSepiaAction();
 }
