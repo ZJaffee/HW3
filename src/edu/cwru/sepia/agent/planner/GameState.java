@@ -44,6 +44,7 @@ public class GameState implements Comparable<GameState> {
 	public List<Peasant> peasants;
 	public Set<Resource> mines;
 	public Set<Resource> forests;
+	public Townhall townhall;
 	
     /**
      * Construct a GameState from a stateview object. This is used to construct the initial search node. All other
@@ -71,6 +72,7 @@ public class GameState implements Comparable<GameState> {
 		//what we are trying to achieve
 		amountGold = state.getResourceAmount(playernum, ResourceType.GOLD);
 		amountWood = state.getResourceAmount(playernum, ResourceType.WOOD);
+		
 		
 		setPeasants(state.getUnits(playernum));
 		setResources(state.getAllResourceNodes());
@@ -143,7 +145,11 @@ public class GameState implements Comparable<GameState> {
 	private void setPeasants(List<UnitView> units){
 		peasants = new ArrayList<Peasant>();
 		for(UnitView unit : units){
-			peasants.add(new Peasant(unit, Item.NOTHING));
+			if(unit.getTemplateView().canMove()){
+				peasants.add(new Peasant(unit, Item.NOTHING));
+			}else{
+				townhall = new Townhall(unit);
+			}
 		}
 	}
 
