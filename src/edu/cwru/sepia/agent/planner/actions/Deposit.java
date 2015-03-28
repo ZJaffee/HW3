@@ -22,7 +22,7 @@ public class Deposit implements StripsAction{
 	@Override
 	public GameState apply(GameState state) {
 		Peasant p = new Peasant(peasant.id, Item.NOTHING, -1, townhall.id);
-		GameState toReturn = new GameState(state, peasant, p, this);
+		GameState toReturn = new GameState(state, peasant, p, this, 1);
 		
 		switch(peasant.carrying){
 			case WOOD:

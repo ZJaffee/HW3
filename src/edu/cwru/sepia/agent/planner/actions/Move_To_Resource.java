@@ -6,10 +6,12 @@ import edu.cwru.sepia.agent.planner.Peasant;
 public class Move_To_Resource implements StripsAction{
 	public final Peasant peasant;
 	public final int toResource;
+	public final int dist;
 	
-	public Move_To_Resource(Peasant p, int resource){
+	public Move_To_Resource(Peasant p, int resource, int dist){
 		peasant = p;
 		toResource = resource;
+		this.dist = dist;
 	}
 	
 	@Override
@@ -20,7 +22,7 @@ public class Move_To_Resource implements StripsAction{
 
 	@Override
 	public GameState apply(GameState state) {
-		return new GameState(state, peasant, new Peasant(peasant.id, peasant.carrying, toResource, -1), this);
+		return new GameState(state, peasant, new Peasant(peasant.id, peasant.carrying, toResource, -1), this, dist);
 	}
 	
 	@Override

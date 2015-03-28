@@ -9,10 +9,12 @@ import edu.cwru.sepia.util.Direction;
 public class Move_To_Townhall implements StripsAction{
 	public final Peasant peasant;
 	public final int townhall;
+	public final int dist;
 	
-	public Move_To_Townhall(Peasant p, int townhallId){
+	public Move_To_Townhall(Peasant p, int townhallId, int dist){
 		peasant = p;
 		townhall = townhallId;
+		this.dist = dist;
 	}
 	
 	@Override
@@ -23,7 +25,7 @@ public class Move_To_Townhall implements StripsAction{
 
 	@Override
 	public GameState apply(GameState state) {
-		return new GameState(state, peasant, new Peasant(peasant.id, peasant.carrying, -1, townhall), this);
+		return new GameState(state, peasant, new Peasant(peasant.id, peasant.carrying, -1, townhall), this, dist);
 	}
 	
 	@Override

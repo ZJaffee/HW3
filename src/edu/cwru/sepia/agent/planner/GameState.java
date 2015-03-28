@@ -17,9 +17,11 @@ import edu.cwru.sepia.util.Direction;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -56,6 +58,7 @@ public class GameState implements Comparable<GameState> {
 	public Townhall townhall;
 	public StripsAction action;
 	public GameState parent;
+	public Map<Integer, Integer> distToTownhall;
 	
     /**
      * Construct a GameState from a stateview object. This is used to construct the initial search node. All other
@@ -87,16 +90,17 @@ public class GameState implements Comparable<GameState> {
 		action = null;
 		parent = null;
 		
+		distToTownhall = new HashMap<Integer, Integer>();
 		setPeasants(state.getUnits(playernum));
 		setResources(state.getAllResourceNodes());
     }
     
-    public GameState(GameState original, Peasant pToRemove, Peasant pToAdd, StripsAction action){
+    public GameState(GameState original, Peasant pToRemove, Peasant pToAdd, StripsAction action, int addTurns){
     	// TODO: Implement me!
     	//basic info
 		xExtent = original.xExtent;
 		yExtent = original.yExtent;
-		turn = original.turn + 1;
+		turn = original.turn + addTurns;
 		
 		//goalstate
 		this.playernum = original.playernum;
@@ -116,14 +120,16 @@ public class GameState implements Comparable<GameState> {
 		mines = original.mines;
 		forests = original.forests;
 		
+		distToTownhall = original.distToTownhall;
+		
 		townhall = original.townhall;
 		
 		this.action = action;
 		parent = original;
     }
     
-    public GameState(GameState original, Peasant pToRemove, Peasant pToAdd, Resource rToRemove, Resource rToAdd, StripsAction action){
-    	this(original, pToRemove, pToAdd, action);
+    public GameState(GameState original, Peasant pToRemove, Peasant pToAdd, Resource rToRemove, Resource rToAdd, StripsAction action, int addTurns){
+    	this(original, pToRemove, pToAdd, action, addTurns);
     	switch(rToRemove.type){
     		case TREE:
     			forests = new HashSet<Resource>();
@@ -145,7 +151,10 @@ public class GameState implements Comparable<GameState> {
     private void setResources(List<ResourceView> allResourceNodes) {
 		mines = new HashSet<Resource>();
 		forests = new HashSet<Resource>();
+		Position pos;
 		for(ResourceView rv : allResourceNodes){
+			pos = new Position(rv.getXPosition(), rv.getYPosition());
+			distToTownhall.put(rv.getID(), townhall.pos.chebyshevDistance(pos));
 			switch(rv.getType()){
 				case GOLD_MINE:
 					mines.add(new Resource(rv));
@@ -214,7 +223,7 @@ public class GameState implements Comparable<GameState> {
 		
 		//Get all Move and Harverst moves
     	for(Resource r : cur.mines){
-    		curMove = new Move_To_Resource(p, r.id);
+    		curMove = new Move_To_Resource(p, r.id, distToTownhall.get(r.id));
     		if(curMove.preconditionsMet(cur)){
     			validMoves.add(curMove.apply(cur));
     		}
@@ -226,7 +235,7 @@ public class GameState implements Comparable<GameState> {
     	}
     	
     	for(Resource r : cur.forests){
-    		curMove = new Move_To_Resource(p, r.id);
+    		curMove = new Move_To_Resource(p, r.id, distToTownhall.get(r.id));
     		if(curMove.preconditionsMet(cur)){
     			validMoves.add(curMove.apply(cur));
     		}
@@ -237,7 +246,11 @@ public class GameState implements Comparable<GameState> {
     		}
     	}
     	
-    	curMove = new Move_To_Townhall(p, cur.townhall.id);
+    	Integer dist = distToTownhall.get(p.isAtResource);
+    	if(dist == null){
+    		dist = 1;
+    	}
+    	curMove = new Move_To_Townhall(p, cur.townhall.id, dist);
     	if(curMove.preconditionsMet(cur)){
 			validMoves.add(curMove.apply(cur));
 		}
