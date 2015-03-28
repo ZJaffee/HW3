@@ -106,11 +106,11 @@ public class PEAgent extends Agent {
     	Set<Integer> activeUnits = new HashSet<Integer>();
     	Map<Integer,ActionResult> feedback = historyView.getCommandFeedback(0, currentStep - 1);
     	ActionFeedback myFeedback;
-    	ActionResult temp;
+    	ActionResult myResult;
     	for(UnitView unit : stateView.getAllUnits()){
-    		temp = feedback.get(unit.getID());
-    		if(temp != null){
-	    		myFeedback = temp.getFeedback();
+    		myResult = feedback.get(unit.getID());
+    		if(myResult != null){
+	    		myFeedback = myResult.getFeedback();
 	    		if(myFeedback == ActionFeedback.INCOMPLETE ){
 	    			activeUnits.add(unit.getID());
 	    		}
