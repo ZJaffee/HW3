@@ -117,6 +117,7 @@ public class PlannerAgent extends Agent {
     		//remove() for a priority queue will remove the best location
     		//based on the .compareTo() function we have defined
     		current = openSet.remove();
+    		//System.out.println(current);
     		//If this is the goal, we've completed the search
     		if(current.isGoal())
     		{
@@ -131,7 +132,6 @@ public class PlannerAgent extends Agent {
     		//Check each successor
     		for(GameState neighbor : sucessors)
     		{
-    			//If we have explored it already, skip it
     			if(closedSet.contains(neighbor))
     				continue;
     			

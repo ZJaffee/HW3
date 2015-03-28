@@ -29,6 +29,7 @@ public abstract class Harvest implements StripsAction{
 
 	@Override
 	public GameState apply(GameState state) {
+		//System.out.println("Harvesting");
 		Peasant p = new Peasant(peasant.id, getResourceType(), peasant.isAtResource, -1);
 		Resource r = new Resource(resource.id, resource.pos, resource.amount - 100, resource.type);
 		return new GameState(state, peasant, p, resource, r, this, 1);

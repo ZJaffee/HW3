@@ -3,6 +3,7 @@ package edu.cwru.sepia.agent.planner;
 
 import edu.cwru.sepia.environment.model.state.ResourceNode.Type;
 import edu.cwru.sepia.agent.planner.Peasant.Item;
+import edu.cwru.sepia.agent.planner.actions.Build_Peasant;
 import edu.cwru.sepia.agent.planner.actions.Deposit;
 import edu.cwru.sepia.agent.planner.actions.Harvest_Gold;
 import edu.cwru.sepia.agent.planner.actions.Harvest_Wood;
@@ -59,6 +60,16 @@ public class GameState implements Comparable<GameState> {
 	public StripsAction action;
 	public GameState parent;
 	public Map<Integer, Integer> distToTownhall;
+	private int maxUnitId;
+	
+	@Override
+	public String toString(){
+		return
+				"GameState:\n"
+				+ "amountGold = "+amountGold+", amountWood = "+amountWood+ ", turn = "+turn+
+				"\npeasants = "+peasants+" , size = "+peasants.size()+"\n"
+						+ "cost = "+getCost()+", heuristic = "+heuristic();
+	}
 	
     /**
      * Construct a GameState from a stateview object. This is used to construct the initial search node. All other
@@ -123,9 +134,12 @@ public class GameState implements Comparable<GameState> {
 		distToTownhall = original.distToTownhall;
 		
 		townhall = original.townhall;
-		
+
+		maxUnitId = original.maxUnitId;
 		this.action = action;
 		parent = original;
+
+    	//System.out.println(toString());
     }
     
     public GameState(GameState original, Peasant pToRemove, Peasant pToAdd, Resource rToRemove, Resource rToAdd, StripsAction action, int addTurns){
@@ -146,6 +160,48 @@ public class GameState implements Comparable<GameState> {
     		default:
     			System.out.println("Error: unkown resource type;");
     	}
+
+    	//System.out.println(toString());
+    }
+    
+    private GameState(GameState original, StripsAction action){
+    	// TODO: Implement me!
+    	//basic info
+		xExtent = original.xExtent;
+		yExtent = original.yExtent;
+		turn = original.turn + 1;
+		
+		//goalstate
+		this.playernum = original.playernum;
+		this.requiredGold = original.requiredGold;
+		this.requiredWood = original.requiredWood;
+		this.buildPeasants = original.buildPeasants;
+		
+		//what we are trying to achieve
+		amountGold = original.amountGold;
+		amountWood = original.amountWood;
+				
+		peasants = new ArrayList<Peasant>();
+		peasants.addAll(original.peasants);
+		
+		mines = original.mines;
+		forests = original.forests;
+		
+		distToTownhall = original.distToTownhall;
+		maxUnitId = original.maxUnitId;
+		townhall = original.townhall;
+		
+		this.action = action;
+		parent = original;
+    }
+    
+    public GameState addPeasant(StripsAction action){
+    	GameState toReturn = new GameState(this, action);
+    	toReturn.peasants.add(new Peasant(++toReturn.maxUnitId, Item.NOTHING, -1, townhall.id));
+    	toReturn.amountGold -= 400;
+
+    	//System.out.println(toReturn.toString());
+    	return toReturn;
     }
 
     private void setResources(List<ResourceView> allResourceNodes) {
@@ -171,7 +227,11 @@ public class GameState implements Comparable<GameState> {
 	
 	private void setPeasants(List<UnitView> units){
 		peasants = new ArrayList<Peasant>();
+		maxUnitId = Integer.MIN_VALUE;
 		for(UnitView unit : units){
+			if(unit.getID() > maxUnitId){
+				maxUnitId = unit.getID();
+			}
 			if(unit.getTemplateView().canMove()){
 				peasants.add(new Peasant(unit, Item.NOTHING));
 			}else{
@@ -202,7 +262,7 @@ public class GameState implements Comparable<GameState> {
      */
     public List<GameState> generateChildren() {
         // TODO: Implement me!
-        List<GameState> nextQ = new LinkedList<GameState>();
+        Set<GameState> nextQ = new HashSet<GameState>();
         List<GameState> currQ = new LinkedList<GameState>();
         currQ.add(this);
         for(Peasant p : peasants){
@@ -261,6 +321,14 @@ public class GameState implements Comparable<GameState> {
 			validMoves.add(curMove.apply(cur));
 		}
     	
+    	//Build peasants if we can
+    	if(buildPeasants){
+    		curMove = new Build_Peasant(p);
+    		if(curMove.preconditionsMet(cur)){
+    			validMoves.add(curMove.apply(cur));
+    		}
+    	}
+    	
 		return validMoves;
 	}
 
@@ -299,7 +367,15 @@ public class GameState implements Comparable<GameState> {
      * @return The value estimated remaining cost to reach a goal state from this state.
      */
     public double heuristic() {
-        return requiredGold - amountGold + requiredWood - amountWood;
+        int neededGold = requiredGold - amountGold;
+        if(neededGold < 0){
+        	neededGold = 0;
+        }
+        int neededWood = requiredWood - amountWood;
+        if(neededWood < 0){
+        	neededWood = 0;
+        }
+        return (((neededGold + neededWood)/100.0)*4) + 100000*(3 - peasants.size());
     }
 
     /**
@@ -310,7 +386,7 @@ public class GameState implements Comparable<GameState> {
      * @return The current cost to reach this goal
      */
     public double getCost() {
-        return turn * 40.0;
+        return turn ;
     }
 
     /**
@@ -336,13 +412,21 @@ public class GameState implements Comparable<GameState> {
     public boolean equals(Object o) {
         if(o instanceof GameState){
         	GameState g = (GameState) o;
-        	if(amountWood != g.amountWood || amountGold != g.amountGold)
+        	System.out.println("Do they equal?\n"+toString()+g.toString());
+        	if(amountWood != g.amountWood || amountGold != g.amountGold){
+        		
         		return false;
+        	}
         	for(Peasant p : peasants){
-        		if(!g.peasants.contains(p)){
+        		boolean peasantAtSameSpot = false;
+        		for(Peasant gp : g.peasants){
+        			peasantAtSameSpot = peasantAtSameSpot || p.isAtResource == gp.isAtResource || p.isAtTownhall == gp.isAtTownhall;
+        		}
+        		if(!peasantAtSameSpot){
         			return false;
         		}
         	}
+        	System.out.println("Yes");
         	return true;
         }
         return false;
@@ -356,8 +440,9 @@ public class GameState implements Comparable<GameState> {
      */
     @Override
     public int hashCode() {
-        // TODO: Implement me!
-        return 0;
+    	int result = ((Integer)amountWood).hashCode();
+        result = 31*result + ((Integer)amountGold).hashCode();
+        return result;
     }
 
 	public boolean resourceAt(Position pos) {

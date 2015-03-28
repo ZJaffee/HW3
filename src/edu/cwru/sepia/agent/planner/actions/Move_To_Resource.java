@@ -22,6 +22,7 @@ public class Move_To_Resource implements StripsAction{
 
 	@Override
 	public GameState apply(GameState state) {
+		//System.out.println("Moving to resource");
 		return new GameState(state, peasant, new Peasant(peasant.id, peasant.carrying, toResource, -1), this, dist);
 	}
 	

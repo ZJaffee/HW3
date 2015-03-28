@@ -200,7 +200,7 @@ public class PEAgent extends Agent {
     		Position townhallPos = new Position(townhall.getXPosition(), townhall.getYPosition());
     		return Action.createPrimitiveDeposit(action.getPeasantId(), peasantPos.getDirection(townhallPos));
     	}
-    	
+    	System.err.println("I do not know how to create this action.");
     	return null;
     }
 

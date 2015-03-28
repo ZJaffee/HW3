@@ -25,6 +25,7 @@ public class Move_To_Townhall implements StripsAction{
 
 	@Override
 	public GameState apply(GameState state) {
+		//System.out.println("Moving to townhall");
 		return new GameState(state, peasant, new Peasant(peasant.id, peasant.carrying, -1, townhall), this, dist);
 	}
 	

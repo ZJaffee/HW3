@@ -21,6 +21,7 @@ public class Deposit implements StripsAction{
 
 	@Override
 	public GameState apply(GameState state) {
+		//System.out.println("Depositing");
 		Peasant p = new Peasant(peasant.id, Item.NOTHING, -1, townhall.id);
 		GameState toReturn = new GameState(state, peasant, p, this, 1);
 		
