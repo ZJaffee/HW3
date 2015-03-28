@@ -1,6 +1,9 @@
 package edu.cwru.sepia.agent.planner;
 
 import edu.cwru.sepia.action.Action;
+import edu.cwru.sepia.action.ActionFeedback;
+import edu.cwru.sepia.action.ActionResult;
+import edu.cwru.sepia.action.ActionType;
 import edu.cwru.sepia.agent.Agent;
 import edu.cwru.sepia.agent.planner.actions.*;
 import edu.cwru.sepia.environment.model.history.History;
@@ -14,7 +17,9 @@ import edu.cwru.sepia.environment.model.state.Unit.UnitView;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.Stack;
 
 /**
@@ -31,12 +36,13 @@ public class PEAgent extends Agent {
     private Map<Integer, Integer> peasantIdMap;
     private int townhallId;
     private int peasantTemplateId;
+    private int currentStep;
 
     public PEAgent(int playernum, Stack<StripsAction> plan) {
         super(playernum);
         peasantIdMap = new HashMap<Integer, Integer>();
         this.plan = plan;
-
+        currentStep = -1;
     }
 
     @Override
@@ -96,21 +102,41 @@ public class PEAgent extends Agent {
     public Map<Integer, Action> middleStep(State.StateView stateView, History.HistoryView historyView) {
         Map<Integer, Action> toReturn = new HashMap<Integer, Action>();
     	StripsAction action;
+    	currentStep++;
+    	Set<Integer> activeUnits = new HashSet<Integer>();
+    	Map<Integer,ActionResult> feedback = historyView.getCommandFeedback(0, currentStep - 1);
+    	ActionFeedback myFeedback;
+    	ActionResult temp;
+    	for(UnitView unit : stateView.getAllUnits()){
+    		temp = feedback.get(unit.getID());
+    		if(temp != null){
+	    		myFeedback = temp.getFeedback();
+	    		if(myFeedback == ActionFeedback.INCOMPLETE ){
+	    			activeUnits.add(unit.getID());
+	    		}
+    		}
+    	}
+
         int i = 1;
     	while( !plan.isEmpty() ){
-    		/*for(UnitView unit : stateView.getAllUnits()){
-    			wait_loop:
-    			while(true){
-	    			if(!(unit.getCurrentDurativeAction() != null && unit.getCurrentDurativeProgress() < 1)){
-	    				break wait_loop;
-	    			}
-    			}
-    			System.out.println(unit.getCurrentDurativeAction());
-    		}*/
         	action = plan.pop();
-        	toReturn.put(i, createSepiaAction(action, stateView));
+        	int unitId = action.getPeasantId();
+        	
+        	if(activeUnits.contains(unitId)){
+        		plan.push(action);
+        		//System.out.println("1"+toReturn);
+        		return toReturn;
+        	}else{
+            	activeUnits.add(unitId);
+        	}
+        	
+        	Action curAction = createSepiaAction(action, stateView);
+        	
+        	toReturn.put(i, curAction);
         	peasantIdMap.put(i, action.getPeasantId());
+        	i++;
         }
+    	//System.out.println("3"+toReturn);
     	return toReturn;
     }
 
@@ -133,14 +159,12 @@ public class PEAgent extends Agent {
         * Action.createCompoundMove(int peasantId, int x, int y)
         */
     	UnitView peasant = null;
-    	UnitView townhall = null;
+    	UnitView townhall = stateView.getUnit(townhallId);
     	Position peasantPos = null;
     	for(UnitView c : stateView.getAllUnits()){
     		if(c.getID() == action.getPeasantId()){
     			peasant = c;
     			peasantPos = new Position(peasant.getXPosition(), peasant.getYPosition());
-    		}else if(!c.getTemplateView().canMove()){
-    			townhall = c;
     		}
     	}
     	if(action instanceof Harvest){
