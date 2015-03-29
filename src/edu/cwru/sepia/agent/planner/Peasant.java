@@ -1,7 +1,7 @@
 package edu.cwru.sepia.agent.planner;
 import edu.cwru.sepia.environment.model.state.Unit.UnitView;
 
-public class Peasant{
+public class Peasant implements Comparable<Peasant>{
 	public final int id;
 	public final Item carrying;
 	public enum Item {WOOD, GOLD, NOTHING};
@@ -33,5 +33,15 @@ public class Peasant{
 
 	public boolean hasNothing() {
 		return carrying == Item.NOTHING;
+	}
+	
+	@Override
+	public String toString(){
+		return id + ", "+carrying+", "+isAtResource+", "+isAtTownhall;
+	}
+
+	@Override
+	public int compareTo(Peasant p) {
+		return id - p.id;
 	}
 }

@@ -116,8 +116,8 @@ public class PlannerAgent extends Agent {
     		//Remove the best (lowest F value) location from the open set
     		//remove() for a priority queue will remove the best location
     		//based on the .compareTo() function we have defined
-    		current = openSet.remove();
-    		//System.out.println(current);
+    		current = openSet.poll();
+    		System.out.println(current);
     		//If this is the goal, we've completed the search
     		if(current.isGoal())
     		{
@@ -128,16 +128,19 @@ public class PlannerAgent extends Agent {
     		closedSet.add(current);
     		//Get the successors of this node
     		List<GameState> sucessors = current.generateChildren();
+    		//System.out.println("Size neighbors: "+sucessors.size());
     		
     		//Check each successor
     		for(GameState neighbor : sucessors)
     		{
-    			if(closedSet.contains(neighbor))
-    				continue;
-    			
+    			//if(closedSet.contains(neighbor)){
+    				//System.out.println("Skipping");
+    				//continue;
+    			//}
     			//If it is not in the open set
 				if(!openSet.contains(neighbor)){
 					openSet.add( neighbor );
+					//System.out.println("Adding");
 					
 					//Add it to the open set
 					//if(!closedSet.contains(neighbor))

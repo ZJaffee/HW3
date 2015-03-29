@@ -184,7 +184,7 @@ public class PEAgent extends Agent {
     		Move_To_Resource mAction = (Move_To_Resource) action;
     		ResourceView moveTo = null;
     		for(ResourceView rv : stateView.getAllResourceNodes()){
-    			if(rv.getID() == mAction.toResource){
+    			if(rv.getID() == mAction.toResourceId){
     				moveTo = rv;
     				break;
     			}
