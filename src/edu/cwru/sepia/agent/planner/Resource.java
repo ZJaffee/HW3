@@ -41,7 +41,11 @@ public class Resource implements Comparable<Resource>{
 
 	@Override
 	public int compareTo(Resource o) {
-		return (dist - o.dist);
+		int ret = (dist - o.dist);
+		if( ret == 0){
+			ret = id - o .id;
+		}
+		return ret;
 	}
 	
 	@Override
