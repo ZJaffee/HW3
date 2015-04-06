@@ -106,12 +106,8 @@ public class PEAgent extends Agent {
      */
     @Override
     public Map<Integer, Action> middleStep(State.StateView stateView, History.HistoryView historyView) {
-    	/*for(UnitView unit : stateView.getAllUnits()){
-    		System.out.println(unit.getID());
-    	}*/
         Map<Integer, Action> toReturn = new HashMap<Integer, Action>();
     	StripsAction action;
-    	//currentStep++;
     	Set<Integer> activeUnits = new HashSet<Integer>();
     	Map<Integer,ActionResult> feedback = historyView.getCommandFeedback(0, stateView.getTurnNumber() - 1);
     	ActionFeedback myFeedback;
@@ -121,7 +117,6 @@ public class PEAgent extends Agent {
     		System.out.println(myResult);
     		if(myResult != null){
 	    		myFeedback = myResult.getFeedback();
-	    		//System.out.println(myFeedback);
 	    		if(myFeedback == ActionFeedback.INCOMPLETE ){
 	    			activeUnits.add(unit.getID());
 	    		}else if(myFeedback == ActionFeedback.FAILED){
@@ -130,10 +125,8 @@ public class PEAgent extends Agent {
 	    		}
     		}
     	}
-    	//System.out.println(activeUnits);
 
     	Stack<StripsAction> putback = new Stack<StripsAction>();
-        int i = 1;
     	while( !plan.isEmpty() && toReturn.size() < 1 && putback.size() < numPeasants){
         	action = plan.pop();
         	int unitId = action.getPeasantId() == -1? townhallId : action.getPeasantId();
@@ -144,7 +137,6 @@ public class PEAgent extends Agent {
         	System.out.println(unitId);
         	int sepiaId = peasantIdMap.get(unitId);
         	if(activeUnits.contains(sepiaId) || preconditionsNotMet(action, stateView)){
-        		//plan.push(action);
         		putback.add(action);
         		continue;
         	}else{
@@ -154,8 +146,6 @@ public class PEAgent extends Agent {
         	Action curAction = createSepiaAction(action, stateView);
         	toReturn.put(sepiaId, curAction);
         	prevAction.put(sepiaId, curAction);
-        	//System.out.println(toReturn);
-        	i++;
         }
     	while(!putback.empty()){
     		plan.push(putback.pop());

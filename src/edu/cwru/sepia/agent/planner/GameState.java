@@ -117,7 +117,7 @@ public class GameState implements Comparable<GameState> {
     	//basic info
 		xExtent = original.xExtent;
 		yExtent = original.yExtent;
-		turn = original.turn + addTurns;
+		turn = original.turn + Math.round(((float)addTurns)/original.peasants.size());
 		
 		//goalstate
 		this.playernum = original.playernum;
@@ -292,7 +292,7 @@ public class GameState implements Comparable<GameState> {
 		if(buildPeasants){
 			curMove = new Build_Peasant();
 			if(curMove.preconditionsMet(cur)){
-				initial = curMove.apply(cur);
+				validMoves.addAll(getAllMoves(p, curMove.apply(cur)));
 			}
 		}
 		if(p.isAtResource == -1 && p.hasNothing()){
