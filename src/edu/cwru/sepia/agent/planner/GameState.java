@@ -53,7 +53,7 @@ public class GameState implements Comparable<GameState> {
 	public final int yExtent;
 	public int amountGold;
 	public int amountWood;
-	private int turn;
+	private double turn;
 	public final int playernum;
 	public final int requiredGold;
 	public final int requiredWood;
@@ -117,7 +117,7 @@ public class GameState implements Comparable<GameState> {
     	//basic info
 		xExtent = original.xExtent;
 		yExtent = original.yExtent;
-		turn = original.turn + Math.round(((float)addTurns)/original.peasants.size());
+		turn = original.turn + 1.0*addTurns/original.peasants.size();//Math.round(((float)addTurns)/original.peasants.size());
 		
 		//goalstate
 		this.playernum = original.playernum;
@@ -272,20 +272,27 @@ public class GameState implements Comparable<GameState> {
         List<GameState> currQ = new LinkedList<GameState>();
         currQ.add(this);
         for(Peasant p : peasants){
-        	while(!currQ.isEmpty()){
-        		GameState cur = currQ.remove(0);
+        	for(int i = 0; i < currQ.size(); i++){
+        		GameState cur = currQ.get(i);
         		nextQ.addAll(getAllMoves(p,cur));
+        		//nextQ.add(cur);
         	}
-        	currQ.addAll(nextQ);
-        	nextQ.clear();
+        	if(!nextQ.isEmpty()){
+        		currQ.clear();
+            	currQ.addAll(nextQ);
+            	nextQ.clear();
+        	}
         }
         
-        
+        if(currQ.isEmpty()){
+        	System.out.println("No currQ");
+        }
 		return currQ;
         
     }
     
     private List<GameState> getAllMoves(Peasant p, GameState cur) {
+    	System.out.println("Trying to get a move");
 		List<GameState> validMoves = new LinkedList<GameState>();
 		StripsAction curMove;
 		GameState initial = cur;
@@ -299,7 +306,8 @@ public class GameState implements Comparable<GameState> {
 			//try moving
     		//System.out.println("Start");
 			int found = 0;
-			if(initial.requiredGold - initial.amountGold > 0){
+			if(initial.requiredGold - initial.amountGold - peasantsGetting(initial, true) > 0){
+				System.out.println("Trying to move to a mine");
 				MOVE_MINES:
 				for(Resource r : initial.mines){
 		    		curMove = new Move_To_Resource(p, r.id, distToTownhall.get(r.id), r);
@@ -315,7 +323,8 @@ public class GameState implements Comparable<GameState> {
 		    		}
 		    	}
 			}
-			if(initial.requiredWood - initial.amountWood > 0){
+			if(initial.requiredWood - initial.amountWood - peasantsGetting(initial, false) > 0){
+				System.out.println("Trying to move to a forest");
 				MOVE_FORESTS:
 		    	for(Resource r : initial.forests){
 					//System.out.println("Trying to move to "+r);
@@ -377,11 +386,35 @@ public class GameState implements Comparable<GameState> {
 				validMoves.add(curMove.apply(initial));
 			}
 		}
-		//System.out.println(validMoves.size());
+		System.out.println(validMoves.size());
 		return validMoves;
 	}
 
-/*
+    private int peasantsGetting(GameState initial, boolean gettingMine) {
+		int ret = 0;
+		for(Peasant p : initial.peasants){
+			int at = p.isAtResource;
+			if(at != -1){
+				if(gettingMine && resourceIsMine(initial, at)){
+					ret += 100;
+				}else if(!gettingMine && !resourceIsMine(initial, at)){
+					ret += 100;
+				}
+			}
+		}
+		return ret;
+	}
+
+	private boolean resourceIsMine(GameState initial, int at) {
+		for(Resource r : initial.mines){
+			if(r.id == at){
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/*
  *     private Set<MapLocation> getSucessors(MapLocation current, MapLocation enemyFootmanLoc, Set<MapLocation> resourceLocations, int xExtent, int yExtent)
     {
     	//Initialize the returned set
@@ -416,26 +449,28 @@ public class GameState implements Comparable<GameState> {
      * @return The value estimated remaining cost to reach a goal state from this state.
      */
     public double heuristic() {
-        int neededGold = requiredGold - amountGold;
+
+        int peasantsHaveWood = 0;
+        int peasantsHaveGold = 0;
+        for(Peasant p : peasants){
+        	if(p.carrying == Item.WOOD ){
+        		peasantsHaveWood += 100;
+        	}else if(p.carrying == Item.GOLD ){
+        		peasantsHaveGold += 100;
+        	}
+        }
+        int neededGold = requiredGold - amountGold - peasantsHaveGold;
         if(neededGold < 0){
         	neededGold = 0;
         	//return Double.POSITIVE_INFINITY;
         }
-        int neededWood = requiredWood - amountWood;
+        int neededWood = requiredWood - amountWood - peasantsHaveWood;
         if(neededWood < 0){
         	neededWood = 0;
         	//return Double.POSITIVE_INFINITY;
         }
         
-        int peasantsHave = 0;
-        for(Peasant p : peasants){
-        	if(p.carrying == Item.WOOD && neededWood > 0){
-        		peasantsHave += 100;
-        	}else if(p.carrying == Item.GOLD && neededGold > 0){
-        		peasantsHave += 100;
-        	}
-        }
-        double turnsToGetNeeded = ((neededGold + neededWood - peasantsHave/2)/100.0)*8;
+        double turnsToGetNeeded = ((neededGold + neededWood)/100.0)*10;
         //System.out.println("Size = "+peasants.size() + " -- "+turnsToGetNeeded/peasants.size());
         return turnsToGetNeeded/peasants.size();
     }
