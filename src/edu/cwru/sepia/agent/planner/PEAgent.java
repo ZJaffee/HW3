@@ -10,6 +10,7 @@ import edu.cwru.sepia.environment.model.history.History;
 import edu.cwru.sepia.environment.model.state.ResourceNode.ResourceView;
 import edu.cwru.sepia.environment.model.state.ResourceType;
 import edu.cwru.sepia.environment.model.state.State;
+import edu.cwru.sepia.environment.model.state.State.StateView;
 import edu.cwru.sepia.environment.model.state.Template;
 import edu.cwru.sepia.environment.model.state.Unit;
 import edu.cwru.sepia.environment.model.state.Unit.UnitView;
@@ -18,7 +19,9 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.Stack;
 
@@ -36,13 +39,15 @@ public class PEAgent extends Agent {
     private Map<Integer, Integer> peasantIdMap;
     private int townhallId;
     private int peasantTemplateId;
-    private int currentStep;
+    private int numPeasants;
+    private Map<Integer, Action> prevAction;
 
     public PEAgent(int playernum, Stack<StripsAction> plan) {
         super(playernum);
         peasantIdMap = new HashMap<Integer, Integer>();
         this.plan = plan;
-        currentStep = -1;
+        numPeasants = 1;
+        prevAction = new HashMap<Integer, Action>();
     }
 
     @Override
@@ -53,6 +58,7 @@ public class PEAgent extends Agent {
             String unitType = unit.getTemplateView().getName().toLowerCase();
             if(unitType.equals("townhall")) {
                 townhallId = unitId;
+                peasantIdMap.put(unitId, unitId);
             } else if(unitType.equals("peasant")) {
                 peasantIdMap.put(unitId, unitId);
             }
@@ -100,47 +106,79 @@ public class PEAgent extends Agent {
      */
     @Override
     public Map<Integer, Action> middleStep(State.StateView stateView, History.HistoryView historyView) {
+    	/*for(UnitView unit : stateView.getAllUnits()){
+    		System.out.println(unit.getID());
+    	}*/
         Map<Integer, Action> toReturn = new HashMap<Integer, Action>();
     	StripsAction action;
-    	currentStep++;
+    	//currentStep++;
     	Set<Integer> activeUnits = new HashSet<Integer>();
-    	Map<Integer,ActionResult> feedback = historyView.getCommandFeedback(0, currentStep - 1);
+    	Map<Integer,ActionResult> feedback = historyView.getCommandFeedback(0, stateView.getTurnNumber() - 1);
     	ActionFeedback myFeedback;
     	ActionResult myResult;
     	for(UnitView unit : stateView.getAllUnits()){
     		myResult = feedback.get(unit.getID());
+    		System.out.println(myResult);
     		if(myResult != null){
 	    		myFeedback = myResult.getFeedback();
+	    		//System.out.println(myFeedback);
 	    		if(myFeedback == ActionFeedback.INCOMPLETE ){
 	    			activeUnits.add(unit.getID());
+	    		}else if(myFeedback == ActionFeedback.FAILED){
+	    			toReturn.put(unit.getID(), prevAction.get(unit.getID()));
+	    			return toReturn;
 	    		}
     		}
     	}
+    	//System.out.println(activeUnits);
 
+    	Stack<StripsAction> putback = new Stack<StripsAction>();
         int i = 1;
-    	while( !plan.isEmpty() ){
+    	while( !plan.isEmpty() && toReturn.size() < 1 && putback.size() < numPeasants){
         	action = plan.pop();
-        	int unitId = action.getPeasantId();
-        	
-        	if(activeUnits.contains(unitId)){
-        		plan.push(action);
-        		//System.out.println("1"+toReturn);
-        		return toReturn;
+        	int unitId = action.getPeasantId() == -1? townhallId : action.getPeasantId();
+        
+        	if(!peasantIdMap.containsKey(unitId)){
+        		matchPeasant(unitId, stateView);
+        	}
+        	System.out.println(unitId);
+        	int sepiaId = peasantIdMap.get(unitId);
+        	if(activeUnits.contains(sepiaId) || preconditionsNotMet(action, stateView)){
+        		//plan.push(action);
+        		putback.add(action);
+        		continue;
         	}else{
-            	activeUnits.add(unitId);
+            	activeUnits.add(sepiaId);
         	}
         	
         	Action curAction = createSepiaAction(action, stateView);
-        	
-        	toReturn.put(i, curAction);
-        	peasantIdMap.put(i, action.getPeasantId());
+        	toReturn.put(sepiaId, curAction);
+        	prevAction.put(sepiaId, curAction);
+        	//System.out.println(toReturn);
         	i++;
         }
-    	//System.out.println("3"+toReturn);
+    	while(!putback.empty()){
+    		plan.push(putback.pop());
+    	}
     	return toReturn;
     }
 
-    /**
+    private boolean preconditionsNotMet(StripsAction action, StateView stateView) {
+		if(action instanceof Build_Peasant){
+			return stateView.getResourceAmount(0, ResourceType.GOLD) < 400;
+		}
+		return false;
+	}
+
+	private void matchPeasant(int unitId, StateView stateView) {
+		for(UnitView unit : stateView.getAllUnits()){
+			if(!peasantIdMap.containsValue(unit.getID())){
+				peasantIdMap.put(unitId, unit.getID());
+			}
+		}
+	}
+
+	/**
      * Returns a SEPIA version of the specified Strips Action.
      * @param action StripsAction
      * @return SEPIA representation of same action
@@ -158,11 +196,18 @@ public class PEAgent extends Agent {
         * You can create a SEPIA move action with the following method
         * Action.createCompoundMove(int peasantId, int x, int y)
         */
+
+    	
+    	if(action instanceof Build_Peasant){
+    		numPeasants++;
+    		return Action.createPrimitiveProduction(townhallId, peasantTemplateId);
+    	}
+    	
     	UnitView peasant = null;
     	UnitView townhall = stateView.getUnit(townhallId);
     	Position peasantPos = null;
     	for(UnitView c : stateView.getAllUnits()){
-    		if(c.getID() == action.getPeasantId()){
+    		if( c.getID() == peasantIdMap.get(action.getPeasantId())){
     			peasant = c;
     			peasantPos = new Position(peasant.getXPosition(), peasant.getYPosition());
     		}
@@ -177,7 +222,9 @@ public class PEAgent extends Agent {
     			}
     		}
     		Position resourcePos = new Position(toHarvest.getXPosition(), toHarvest.getYPosition());
-    		return Action.createPrimitiveGather(action.getPeasantId(), peasantPos.getDirection(resourcePos));
+    		action.getPeasantId();
+    		peasantPos.getDirection(resourcePos);
+    		return Action.createPrimitiveGather(peasant.getID(), peasantPos.getDirection(resourcePos));
     	}
     	
     	if(action instanceof Move_To_Resource){
@@ -189,22 +236,33 @@ public class PEAgent extends Agent {
     				break;
     			}
     		}
-    		return Action.createCompoundMove(action.getPeasantId(), moveTo.getXPosition(), moveTo.getYPosition());
+    		return Action.createCompoundMove(peasant.getID(), moveTo.getXPosition(), moveTo.getYPosition());
     	}
     	
     	if(action instanceof Move_To_Townhall){
-    		return Action.createCompoundMove(action.getPeasantId(), townhall.getXPosition(), townhall.getYPosition());
+    		return Action.createCompoundMove(peasant.getID(), townhall.getXPosition(), townhall.getYPosition());
     	}
     	
     	if(action instanceof Deposit){
     		Position townhallPos = new Position(townhall.getXPosition(), townhall.getYPosition());
-    		return Action.createPrimitiveDeposit(action.getPeasantId(), peasantPos.getDirection(townhallPos));
+    		return Action.createPrimitiveDeposit(peasant.getID(), peasantPos.getDirection(townhallPos));
     	}
     	System.err.println("I do not know how to create this action.");
     	return null;
     }
 
-    @Override
+    /*private void assignPeasantId(int id) {
+		Set<Entry<Integer, Integer>> peasants = peasantIdMap.entrySet();
+		for(Entry<Integer,Integer> p : peasants){
+			if(p.getValue() == -1){
+				peasantIdMap.put(p.getKey(), id);
+				System.out.println("Matched " + p.getKey() + " to "+id);
+				return;
+			}
+		}
+	}
+*/
+	@Override
     public void terminalStep(State.StateView stateView, History.HistoryView historyView) {
 
     }

@@ -3,15 +3,10 @@ package edu.cwru.sepia.agent.planner.actions;
 import edu.cwru.sepia.agent.planner.GameState;
 import edu.cwru.sepia.agent.planner.Peasant;
 public class Build_Peasant implements StripsAction{
-	Peasant peasant;
-	
-	public Build_Peasant(Peasant p){
-		peasant = p;
-	}
 	
 	@Override
 	public boolean preconditionsMet(GameState state) {
-		return state.peasants.size() < 3 && peasant.isAtTownhall != -1 && state.amountGold >= 400;
+		return state.peasants.size() < 3 && state.amountGold >= 400;
 	}
 
 	@Override
@@ -23,7 +18,7 @@ public class Build_Peasant implements StripsAction{
 	@Override
 	public int getPeasantId() {
 		// TODO Auto-generated method stub
-		return 0;
+		return -1;
 	}
 
 }

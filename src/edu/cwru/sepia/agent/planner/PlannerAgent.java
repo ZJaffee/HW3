@@ -43,7 +43,7 @@ public class PlannerAgent extends Agent {
     public Map<Integer, Action> initialStep(State.StateView stateView, History.HistoryView historyView) {
 
         Stack<StripsAction> plan = AstarSearch(new GameState(stateView, playernum, requiredGold, requiredWood, buildPeasants));
-
+        System.out.println(plan);
         if(plan == null) {
             System.err.println("No plan was found");
             System.exit(1);
@@ -117,7 +117,7 @@ public class PlannerAgent extends Agent {
     		//remove() for a priority queue will remove the best location
     		//based on the .compareTo() function we have defined
     		current = openSet.poll();
-    		System.out.println(current);
+    		//System.out.println(current);
     		//If this is the goal, we've completed the search
     		if(current.isGoal())
     		{

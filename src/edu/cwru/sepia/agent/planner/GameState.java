@@ -17,6 +17,7 @@ import edu.cwru.sepia.environment.model.state.Unit.UnitView;
 import edu.cwru.sepia.util.Direction;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -202,7 +203,7 @@ public class GameState implements Comparable<GameState> {
     
     public GameState addPeasant(StripsAction action){
     	GameState toReturn = new GameState(this, action);
-    	toReturn.peasants.add(new Peasant(++toReturn.maxUnitId, Item.NOTHING, -1, townhall.id));
+    	toReturn.peasants.add(new Peasant((++toReturn.maxUnitId), Item.NOTHING, -1, townhall.id));
     	toReturn.amountGold -= 400;
 
     	//System.out.println(toReturn.toString());
@@ -222,6 +223,7 @@ public class GameState implements Comparable<GameState> {
 					break;
 				case TREE:
 					forests.add(new Resource(rv, distToTownhall.get(rv.getID())));
+					System.out.println(Arrays.toString(forests.toArray()));
 					break;
 				default:
 					System.out.println("Error: Unknown resource type.");
@@ -277,6 +279,8 @@ public class GameState implements Comparable<GameState> {
         	currQ.addAll(nextQ);
         	nextQ.clear();
         }
+        
+        
 		return currQ;
         
     }
@@ -284,35 +288,41 @@ public class GameState implements Comparable<GameState> {
     private List<GameState> getAllMoves(Peasant p, GameState cur) {
 		List<GameState> validMoves = new LinkedList<GameState>();
 		StripsAction curMove;
-		
+		GameState initial = cur;
+		if(buildPeasants){
+			curMove = new Build_Peasant();
+			if(curMove.preconditionsMet(cur)){
+				initial = curMove.apply(cur);
+			}
+		}
 		if(p.isAtResource == -1 && p.hasNothing()){
 			//try moving
     		//System.out.println("Start");
 			int found = 0;
-			if(cur.requiredGold - cur.amountGold > 0){
+			if(initial.requiredGold - initial.amountGold > 0){
 				MOVE_MINES:
-				for(Resource r : cur.mines){
+				for(Resource r : initial.mines){
 		    		curMove = new Move_To_Resource(p, r.id, distToTownhall.get(r.id), r);
 
-					System.out.println("Trying to move to "+r);
+					//System.out.println("Trying to move to "+r);
 
-	    			System.out.println("Moving to mine");
-		    		if(curMove.preconditionsMet(cur)){
-		    			validMoves.add(curMove.apply(cur));
+	    			//System.out.println("Moving to mine");
+		    		if(curMove.preconditionsMet(initial)){
+		    			validMoves.add(curMove.apply(initial));
 		    			found++;
 		    			//if(found > 2)
 		    			//	break MOVE_MINES;
 		    		}
 		    	}
 			}
-			if(cur.requiredWood - cur.amountWood > 0){
+			if(initial.requiredWood - initial.amountWood > 0){
 				MOVE_FORESTS:
-		    	for(Resource r : cur.forests){
-					System.out.println("Trying to move to "+r);
+		    	for(Resource r : initial.forests){
+					//System.out.println("Trying to move to "+r);
 		    		curMove = new Move_To_Resource(p, r.id, distToTownhall.get(r.id), r);
 	    			//System.out.println(r.id+" -- "+r.amount);
-		    		if(curMove.preconditionsMet(cur)){
-		    			validMoves.add(curMove.apply(cur));
+		    		if(curMove.preconditionsMet(initial)){
+		    			validMoves.add(curMove.apply(initial));
 		    			found++;
 		    			//System.out.println("Did it");
 		    			//if(found > 5)
@@ -322,26 +332,26 @@ public class GameState implements Comparable<GameState> {
 			}
 		}
 		
-		if(buildPeasants && p.isAtTownhall != -1 && p.hasNothing()){
-			curMove = new Build_Peasant(p);
+		/*if(buildPeasants){
+			curMove = new Build_Peasant();
     		if(curMove.preconditionsMet(cur)){
     			validMoves.add(curMove.apply(cur));
     		}
-		}
+		}*/
 		
 		if(p.isAtResource != -1 && p.hasNothing()){
 			//try harvesting
-			for(Resource r : cur.mines){
+			for(Resource r : initial.mines){
 				curMove = new Harvest_Gold(p, r);
-	    		if(curMove.preconditionsMet(cur)){
-	    			validMoves.add(curMove.apply(cur));
+	    		if(curMove.preconditionsMet(initial)){
+	    			validMoves.add(curMove.apply(initial));
 	    			break;
 	    		}
 			}
-			for(Resource r : cur.forests){	    		
+			for(Resource r : initial.forests){	    		
 	    		curMove = new Harvest_Wood(p, r);
-	    		if(curMove.preconditionsMet(cur)){
-	    			validMoves.add(curMove.apply(cur));
+	    		if(curMove.preconditionsMet(initial)){
+	    			validMoves.add(curMove.apply(initial));
 	    			break;
 	    		}
 	    	}
@@ -353,21 +363,21 @@ public class GameState implements Comparable<GameState> {
 	    	if(dist == null){
 	    		dist = 1;
 	    	}
-	    	curMove = new Move_To_Townhall(p, cur.townhall.id, dist);
-	    	if(curMove.preconditionsMet(cur)){
-				validMoves.add(curMove.apply(cur));
+	    	curMove = new Move_To_Townhall(p, initial.townhall.id, dist);
+	    	if(curMove.preconditionsMet(initial)){
+				validMoves.add(curMove.apply(initial));
 			}	
 		}
 		
 		if(p.isAtTownhall != -1 && !p.hasNothing()){
 			//Add deposit if possible
-	    	curMove = new Deposit(p, cur.townhall);
-	    	if(curMove.preconditionsMet(cur)){
-				System.out.println("Gonna deposit");
-				validMoves.add(curMove.apply(cur));
+	    	curMove = new Deposit(p, initial.townhall);
+	    	if(curMove.preconditionsMet(initial)){
+				//System.out.println("Gonna deposit");
+				validMoves.add(curMove.apply(initial));
 			}
 		}
-		System.out.println(validMoves.size());
+		//System.out.println(validMoves.size());
 		return validMoves;
 	}
 
