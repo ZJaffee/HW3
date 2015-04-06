@@ -49,6 +49,7 @@ import java.util.TreeSet;
  */
 public class GameState implements Comparable<GameState> {
 	
+	private static double AVG_NUM_TURNS_TO_GET_RESOURCE = 8.0;
 	public final int xExtent;
 	public final int yExtent;
 	public int amountGold;
@@ -117,7 +118,7 @@ public class GameState implements Comparable<GameState> {
     	//basic info
 		xExtent = original.xExtent;
 		yExtent = original.yExtent;
-		turn = original.turn + 1.0*addTurns/original.peasants.size();//Math.round(((float)addTurns)/original.peasants.size());
+		turn = original.turn + Math.round(((float)addTurns)/original.peasants.size());//Math.round(((float)addTurns)/original.peasants.size());
 		
 		//goalstate
 		this.playernum = original.playernum;
@@ -229,6 +230,13 @@ public class GameState implements Comparable<GameState> {
 					System.out.println("Error: Unknown resource type.");
 			}
 		}
+		/* It happened to be that performance was better by setting 
+		 * AVG_NUM_TURNS_TO_GET_RESOURCE to 8 rather than calculating the actual average
+		 * double avg_dist = 0.0;
+		for(Integer d : distToTownhall.values()){
+			avg_dist += (1.0*d)/distToTownhall.size();
+		}
+		AVG_NUM_TURNS_TO_GET_RESOURCE = 2*avg_dist + 2;*/
 	}
 	
 	private void setPeasants(List<UnitView> units){
@@ -470,7 +478,7 @@ public class GameState implements Comparable<GameState> {
         	//return Double.POSITIVE_INFINITY;
         }
         
-        double turnsToGetNeeded = ((neededGold + neededWood)/100.0)*10;
+        double turnsToGetNeeded = ((neededGold + neededWood)/100.0)*AVG_NUM_TURNS_TO_GET_RESOURCE;
         //System.out.println("Size = "+peasants.size() + " -- "+turnsToGetNeeded/peasants.size());
         return turnsToGetNeeded/peasants.size();
     }

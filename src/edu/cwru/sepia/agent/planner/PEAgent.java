@@ -40,6 +40,7 @@ public class PEAgent extends Agent {
     private int townhallId;
     private int peasantTemplateId;
     private int numPeasants;
+    private int newNumPeasants;
     private Map<Integer, Action> prevAction;
 
     public PEAgent(int playernum, Stack<StripsAction> plan) {
@@ -47,6 +48,7 @@ public class PEAgent extends Agent {
         peasantIdMap = new HashMap<Integer, Integer>();
         this.plan = plan;
         numPeasants = 1;
+        newNumPeasants = 1;
         prevAction = new HashMap<Integer, Action>();
     }
 
@@ -114,7 +116,7 @@ public class PEAgent extends Agent {
     	ActionResult myResult;
     	for(UnitView unit : stateView.getAllUnits()){
     		myResult = feedback.get(unit.getID());
-    		System.out.println(myResult);
+    		//System.out.println(myResult);
     		if(myResult != null){
 	    		myFeedback = myResult.getFeedback();
 	    		if(myFeedback == ActionFeedback.INCOMPLETE ){
@@ -127,14 +129,14 @@ public class PEAgent extends Agent {
     	}
 
     	Stack<StripsAction> putback = new Stack<StripsAction>();
-    	while( !plan.isEmpty() && toReturn.size() < 1 && putback.size() < numPeasants){
+    	while( !plan.isEmpty() &&/* toReturn.size() < 1 &&*/ putback.size() <= numPeasants + 1){
         	action = plan.pop();
         	int unitId = action.getPeasantId() == -1? townhallId : action.getPeasantId();
         
         	if(!peasantIdMap.containsKey(unitId)){
         		matchPeasant(unitId, stateView);
         	}
-        	System.out.println(unitId);
+        	//System.out.println(unitId);
         	int sepiaId = peasantIdMap.get(unitId);
         	if(activeUnits.contains(sepiaId) || preconditionsNotMet(action, stateView)){
         		putback.add(action);
@@ -142,14 +144,21 @@ public class PEAgent extends Agent {
         	}else{
             	activeUnits.add(sepiaId);
         	}
-        	
+        	if(action instanceof Build_Peasant && !toReturn.isEmpty()){
+        		return toReturn;
+        	}
         	Action curAction = createSepiaAction(action, stateView);
         	toReturn.put(sepiaId, curAction);
         	prevAction.put(sepiaId, curAction);
+        	if(action instanceof Build_Peasant){
+        		break;
+        	}
         }
     	while(!putback.empty()){
     		plan.push(putback.pop());
     	}
+    	System.out.println(toReturn);
+    	numPeasants = newNumPeasants;
     	return toReturn;
     }
 
@@ -189,7 +198,7 @@ public class PEAgent extends Agent {
 
     	
     	if(action instanceof Build_Peasant){
-    		numPeasants++;
+    		newNumPeasants++;
     		return Action.createPrimitiveProduction(townhallId, peasantTemplateId);
     	}
     	
