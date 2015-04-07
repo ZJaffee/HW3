@@ -402,10 +402,16 @@ public class GameState implements Comparable<GameState> {
 		int ret = 0;
 		for(Peasant p : initial.peasants){
 			int at = p.isAtResource;
-			if(at != -1){
+			if(at != -1 && p.hasNothing()){
 				if(gettingMine && resourceIsMine(initial, at)){
 					ret += 100;
 				}else if(!gettingMine && !resourceIsMine(initial, at)){
+					ret += 100;
+				}
+			}else if(!p.hasNothing()){
+				if(p.carrying == Item.GOLD && gettingMine){
+					ret += 100;
+				}else if(p.carrying == Item.WOOD && !gettingMine){
 					ret += 100;
 				}
 			}
