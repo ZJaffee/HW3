@@ -192,7 +192,7 @@ public class PEAgent extends Agent {
     //Otherwise, the townhall tries to make a peasant before enough deposits have been made
     private boolean preconditionsNotMet(StripsAction action, StateView stateView) {
 		if(action instanceof Build_Peasant){
-			//The preconditons for a Build_Peasant action are not met if tthe amount of gold for player 0 is less than 400
+			//The preconditions for a Build_Peasant action are not met if tthe amount of gold for player 0 is less than 400
 			return stateView.getResourceAmount(0, ResourceType.GOLD) < 400;
 		}
 		return false;

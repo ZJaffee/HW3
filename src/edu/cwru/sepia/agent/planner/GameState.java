@@ -44,9 +44,9 @@ import java.util.TreeSet;
 public class GameState implements Comparable<GameState> {
 	
 	//The estimated average/min number of turns to obtain a resource
-	//Since, in our maps, the closes resource is 3 away from the townhall, this number is 
-	// 2*3 + 2 for 2 moves and 1 gather and 1 deposit moves
-	private static double AVG_NUM_TURNS_TO_GET_RESOURCE = 8.0;
+	//This value is recalculated later.  It is trivially set to 6 because the min value happens to be 6
+	//in the maps we were given.
+	private static double MIN_NUM_TURNS_TO_GET_RESOURCE = 6.0;
 	
 	//Other parameters
 	public final int xExtent;
@@ -253,8 +253,8 @@ public class GameState implements Comparable<GameState> {
 		for(ResourceView rv : allResourceNodes){
 			//Make the position object for this resource
 			pos = new Position(rv.getXPosition(), rv.getYPosition());
-			//Calculate the chebyshev distance from townhall to this resource
-			distToTownhall.put(rv.getID(), townhall.pos.chebyshevDistance(pos));
+			//Calculate the distance the peasant has to move to get from the townhall to the resource
+			distToTownhall.put(rv.getID(), Math.max(0,townhall.pos.chebyshevDistance(pos) - 2));
 			switch(rv.getType()){
 				//If the resource is a gold mine, add it to our mines set
 				case GOLD_MINE:
@@ -269,14 +269,15 @@ public class GameState implements Comparable<GameState> {
 			}
 		}
 		//I tried setting the AVG_NUM_TURNS_TO_GET_RESOURCE here, but it turned out to be more optimal
-		//to just set it to 8
-		/* It happened to be that performance was better by setting 
-		 * AVG_NUM_TURNS_TO_GET_RESOURCE to 8 rather than calculating the actual average
-		 * double avg_dist = 0.0;
+		double min_dist = Double.POSITIVE_INFINITY;
 		for(Integer d : distToTownhall.values()){
-			avg_dist += (1.0*d)/distToTownhall.size();
+			if(d < min_dist){
+				min_dist = d;
+			}
 		}
-		AVG_NUM_TURNS_TO_GET_RESOURCE = 2*avg_dist + 2;*/
+		System.out.println(distToTownhall.values());
+		MIN_NUM_TURNS_TO_GET_RESOURCE = 2*min_dist + 2;
+		System.out.println("Minimum number of turns to get a resource is "+MIN_NUM_TURNS_TO_GET_RESOURCE);
 	}
 	
     //Get all the peasant and townhall info we need
@@ -502,10 +503,9 @@ public class GameState implements Comparable<GameState> {
      * Add a description here in your submission explaining your heuristic.
      * The heuristc returns the number of moves estimated to complete the goal.  It does this by calculating the resources we need:
      * 	neededResource = required - amountWeHave - amountPeasantsHave
-     * then, we return ((neededResource/100)*8)/numPeasants, because each 100 resourced need 1 more "move" and the minimum cost of a "move" is 8,
-     * since the closest resource is 3 moves away, and we need to harvest and deposit: 2*3 + 2 = 8.  We assume the turn load is equally
-     * distributed among peasants.
-     * This is admissible (at least mostly) because 8 is a minimum value, and we do not take into account that the resources peasants
+     * then, we return ((neededResource/100)*minNumTurns)/numPeasants, because each 100 resources need 1 more "move", and we use the minNumTurns
+     * to keep the heuristic admissible.
+     * This is admissible because 8 it is a minimum value, and we do not take into account that the resources peasants
      * are still carrying still needs to be carried to the townhall.  Also, the assumption that the turn load will be equally distrubted among
      * the peasants is an idealized assumption, further simplifying the problem --> admissible heuristic.
      *
@@ -535,7 +535,7 @@ public class GameState implements Comparable<GameState> {
         }
         
         //Calculate the number of turns we need to get the remaining resources
-        double turnsToGetNeeded = ((neededGold + neededWood)/100.0)*AVG_NUM_TURNS_TO_GET_RESOURCE;
+        double turnsToGetNeeded = ((neededGold + neededWood)/100.0)*MIN_NUM_TURNS_TO_GET_RESOURCE;
         //return the number of turns divided by the number of peasants we have
         return turnsToGetNeeded/peasants.size();
     }
