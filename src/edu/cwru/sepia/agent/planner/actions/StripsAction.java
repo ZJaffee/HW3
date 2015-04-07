@@ -1,8 +1,6 @@
 package edu.cwru.sepia.agent.planner.actions;
 
-import edu.cwru.sepia.action.Action;
 import edu.cwru.sepia.agent.planner.GameState;
-import edu.cwru.sepia.agent.planner.Peasant;
 
 /**
  * A useful start of an interface representing strips actions. You may add new methods to this interface if needed, but
@@ -39,4 +37,5 @@ public interface StripsAction {
      */
     public GameState apply(GameState state);
     
+    //Returns the peasant id that this action relates to -- or -1 if it is a buildPeasant action
     public int getPeasantId();}

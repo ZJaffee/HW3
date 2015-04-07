@@ -2,9 +2,6 @@ package edu.cwru.sepia.agent.planner;
 
 import edu.cwru.sepia.action.Action;
 import edu.cwru.sepia.agent.Agent;
-import edu.cwru.sepia.agent.planner.actions.Harvest;
-import edu.cwru.sepia.agent.planner.actions.Harvest_Wood;
-import edu.cwru.sepia.agent.planner.actions.Move_To_Townhall;
 import edu.cwru.sepia.agent.planner.actions.StripsAction;
 import edu.cwru.sepia.environment.model.history.History;
 import edu.cwru.sepia.environment.model.state.State;
@@ -95,29 +92,22 @@ public class PlannerAgent extends Agent {
      */
     private Stack<StripsAction> AstarSearch(GameState startState) {
     	//Initialize the open and closed sets
-    	//Closed set is a HashMap in order to have constant .contains() check
+    	//Closed set is a HashSet in order to have constant .contains() check
     	Set<GameState> closedSet = new HashSet<GameState>();
     	
-    	//Open set is a priority queue in order to have logn getMinF value
-    		//A possible optimization would be to have an additional HashSet version of openSet
-    		//because it would have a O(1) .contains() method rather than O(logn)
-    		//The expense of this optimization would be that it requires double the space
-    		// -- an expense which was not optimal for our smaller sample sizes
+    	//Open set is a priority queue so the GameStates will be sorted
     	PriorityQueue<GameState> openSet = new PriorityQueue<GameState>();
     	
-    	//The given GameState is not the right format for a HashSet and Priority Queue, 
-    	//so we convert it and add it to the open set
+    	//Add the initial state to the open set
     	openSet.add(startState);
     	
     	GameState current;
     	//While the open set is not empty
     	while(!openSet.isEmpty())
     	{
-    		//Remove the best (lowest F value) location from the open set
-    		//remove() for a priority queue will remove the best location
-    		//based on the .compareTo() function we have defined
+    		//Remove the best GameState from the open set
     		current = openSet.poll();
-    		//System.out.println(current);
+    		
     		//If this is the goal, we've completed the search
     		if(current.isGoal())
     		{
@@ -128,23 +118,21 @@ public class PlannerAgent extends Agent {
     		closedSet.add(current);
     		//Get the successors of this node
     		List<GameState> sucessors = current.generateChildren();
-    		//System.out.println("Size neighbors: "+sucessors.size());
     		
     		//Check each successor
     		for(GameState neighbor : sucessors)
     		{
+    			//I found that including the closedSet check resulted in no plans being found
+    			//while not including this check, optimal solutions are still being found,
+    			//So I think it is good to omit this step
     			//if(closedSet.contains(neighbor)){
-    				//System.out.println("Skipping");
-    				//continue;
+    				// do nothing
     			//}
+    			
     			//If it is not in the open set
 				if(!openSet.contains(neighbor)){
-					openSet.add( neighbor );
-					//System.out.println("Adding");
-					
 					//Add it to the open set
-					//if(!closedSet.contains(neighbor))
-						//openSet.add(neighbor);
+					openSet.add( neighbor );
 				}
     			
     		}
@@ -152,9 +140,11 @@ public class PlannerAgent extends Agent {
         // there is no path
     	return null;
     }
-    private Stack<StripsAction> reconstructPath(GameState current) {
+    
+    //Reconstructs the StripsActions path by getting the StripsAction of GameState parents
+    private Stack<StripsAction> reconstructPath(GameState goalState) {
 		Stack<StripsAction> actions = new Stack<StripsAction>();
-		GameState parent = current;
+		GameState parent = goalState;
 		while( parent.parent != null ){
 			actions.push(parent.action);
 			parent = parent.parent;

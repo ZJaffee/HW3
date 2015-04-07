@@ -3,7 +3,6 @@ package edu.cwru.sepia.agent.planner;
 import edu.cwru.sepia.action.Action;
 import edu.cwru.sepia.action.ActionFeedback;
 import edu.cwru.sepia.action.ActionResult;
-import edu.cwru.sepia.action.ActionType;
 import edu.cwru.sepia.agent.Agent;
 import edu.cwru.sepia.agent.planner.actions.*;
 import edu.cwru.sepia.environment.model.history.History;
@@ -19,9 +18,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.Stack;
 
@@ -39,8 +36,13 @@ public class PEAgent extends Agent {
     private Map<Integer, Integer> peasantIdMap;
     private int townhallId;
     private int peasantTemplateId;
+    
+    //The number of peasants at the start of this turn
     private int numPeasants;
+    //The number of peasants at the end of this turn
     private int newNumPeasants;
+    //A map of unit ids to that unit's previous action -- need this because some actions may fail
+    //For instance, two peasants may run into each other, so they need to repeat their compountMove
     private Map<Integer, Action> prevAction;
 
     public PEAgent(int playernum, Stack<StripsAction> plan) {
@@ -108,71 +110,103 @@ public class PEAgent extends Agent {
      */
     @Override
     public Map<Integer, Action> middleStep(State.StateView stateView, History.HistoryView historyView) {
+    	//Our return map
         Map<Integer, Action> toReturn = new HashMap<Integer, Action>();
-    	StripsAction action;
+        
+        //First, find out which units are active, as we do not want to give them another command yet
     	Set<Integer> activeUnits = new HashSet<Integer>();
     	Map<Integer,ActionResult> feedback = historyView.getCommandFeedback(0, stateView.getTurnNumber() - 1);
     	ActionFeedback myFeedback;
     	ActionResult myResult;
     	for(UnitView unit : stateView.getAllUnits()){
     		myResult = feedback.get(unit.getID());
-    		//System.out.println(myResult);
     		if(myResult != null){
 	    		myFeedback = myResult.getFeedback();
+	    		//If the unit's action is incomplete, add it to the activeUnits set
 	    		if(myFeedback == ActionFeedback.INCOMPLETE ){
 	    			activeUnits.add(unit.getID());
-	    		}else if(myFeedback == ActionFeedback.FAILED){
+	    		}
+	    		//If the unit's action failed, repeat it
+	    		else if(myFeedback == ActionFeedback.FAILED){
 	    			toReturn.put(unit.getID(), prevAction.get(unit.getID()));
-	    			return toReturn;
+	    			activeUnits.add(unit.getID());
 	    		}
     		}
     	}
 
+    	StripsAction action;
+    	//We will look ahead a few moves to improve scheduling capability
+    	//As a result, must remember the actions we skipped so we can put them back later
     	Stack<StripsAction> putback = new Stack<StripsAction>();
-    	while( !plan.isEmpty() &&/* toReturn.size() < 1 &&*/ putback.size() <= numPeasants + 1){
+    	//As long as the plan is not empty and we have not given all the peasants commands
+    	while( !plan.isEmpty() && activeUnits.size() < numPeasants ){
+    		//Get the next action
         	action = plan.pop();
+        	//Get the STRIPS unit id of the peasant to move
         	int unitId = action.getPeasantId() == -1? townhallId : action.getPeasantId();
         
+        	//If this STRIPS id is not id out peasantIdMap, match it to a new peasant
         	if(!peasantIdMap.containsKey(unitId)){
         		matchPeasant(unitId, stateView);
         	}
-        	//System.out.println(unitId);
+        	//Get the sepia id of this unit
         	int sepiaId = peasantIdMap.get(unitId);
+        	//If this unit is active or the preconditions are not met for this action
         	if(activeUnits.contains(sepiaId) || preconditionsNotMet(action, stateView)){
+        		//Skip this action and continue
         		putback.add(action);
         		continue;
         	}else{
+        		//Otherwise, we can now consider this unit to be active, since we are giving it a move
             	activeUnits.add(sepiaId);
         	}
+        	//There appeared to be a bug where buildPeasant actions could not be parallelized
+        	//So, I make sure to only buildPeasant actions alone
         	if(action instanceof Build_Peasant && !toReturn.isEmpty()){
-        		return toReturn;
+        		break;
         	}
+        	//Add the sepia action to our return map
         	Action curAction = createSepiaAction(action, stateView);
         	toReturn.put(sepiaId, curAction);
         	prevAction.put(sepiaId, curAction);
+        	
+        	//We want to always return BuildPeasant actions alone -- there was a weird bug where SEPIA would say it made a peasant
+        	//when it actually did not if we didnt do this
         	if(action instanceof Build_Peasant){
         		break;
         	}
         }
+    	//Put the moves we skipped back on the plan stack
     	while(!putback.empty()){
     		plan.push(putback.pop());
     	}
-    	System.out.println(toReturn);
+    	//If a peasant was made, update the numPeasants
+    	//It was necessary to save the numPeasants as two values, otherwise the value would update mid-loop above,
+    	//and it could cause problems
     	numPeasants = newNumPeasants;
+    	
     	return toReturn;
     }
 
+    //The only precondition we must check is that we have enough gold to build peasants
+    //Otherwise, the townhall tries to make a peasant before enough deposits have been made
     private boolean preconditionsNotMet(StripsAction action, StateView stateView) {
 		if(action instanceof Build_Peasant){
+			//The preconditons for a Build_Peasant action are not met if tthe amount of gold for player 0 is less than 400
 			return stateView.getResourceAmount(0, ResourceType.GOLD) < 400;
 		}
 		return false;
 	}
 
+    //Given an unmatched unitId in STRIPS space, match it to an unmatched SEPIA unit
 	private void matchPeasant(int unitId, StateView stateView) {
+		//Loop through each SEPIA peasant
 		for(UnitView unit : stateView.getAllUnits()){
+			//If this SEPIA unit does not have a STRIPS match in our map
 			if(!peasantIdMap.containsValue(unit.getID())){
+				//match it
 				peasantIdMap.put(unitId, unit.getID());
+				break;
 			}
 		}
 	}
@@ -196,12 +230,14 @@ public class PEAgent extends Agent {
         * Action.createCompoundMove(int peasantId, int x, int y)
         */
 
-    	
+    	//If this is a buildPeasant action
     	if(action instanceof Build_Peasant){
+    		//Increment newNumPeasants and return a production action
     		newNumPeasants++;
     		return Action.createPrimitiveProduction(townhallId, peasantTemplateId);
     	}
     	
+    	//Otherwise, get the UnitView of this peasant and its position
     	UnitView peasant = null;
     	UnitView townhall = stateView.getUnit(townhallId);
     	Position peasantPos = null;
@@ -211,56 +247,55 @@ public class PEAgent extends Agent {
     			peasantPos = new Position(peasant.getXPosition(), peasant.getYPosition());
     		}
     	}
+    	//If we are harvesting
     	if(action instanceof Harvest){
     		Harvest hAction = (Harvest) action;
     		ResourceView toHarvest = null;
+    		//Get the resourceView we are harvesting from
     		for(ResourceView rv : stateView.getAllResourceNodes()){
     			if(rv.getID() == hAction.resource.id){
     				toHarvest = rv;
     				break;
     			}
     		}
+    		//Get the position of the resource
     		Position resourcePos = new Position(toHarvest.getXPosition(), toHarvest.getYPosition());
-    		action.getPeasantId();
-    		peasantPos.getDirection(resourcePos);
+    		//Return a primitive gather on this peasant in the direction of the resource
     		return Action.createPrimitiveGather(peasant.getID(), peasantPos.getDirection(resourcePos));
     	}
     	
+    	//If the action is a move to a resource
     	if(action instanceof Move_To_Resource){
     		Move_To_Resource mAction = (Move_To_Resource) action;
     		ResourceView moveTo = null;
+    		//Get the resource we are moving to
     		for(ResourceView rv : stateView.getAllResourceNodes()){
     			if(rv.getID() == mAction.toResourceId){
     				moveTo = rv;
     				break;
     			}
     		}
+    		//Return a compound move to the location of that resource
     		return Action.createCompoundMove(peasant.getID(), moveTo.getXPosition(), moveTo.getYPosition());
     	}
     	
+    	//If the action is to move to a townhall, just return a compound move at the town hall
     	if(action instanceof Move_To_Townhall){
     		return Action.createCompoundMove(peasant.getID(), townhall.getXPosition(), townhall.getYPosition());
     	}
     	
+    	//If the action is a deposit
     	if(action instanceof Deposit){
+    		//Return a deposit in the direction of the townhall
     		Position townhallPos = new Position(townhall.getXPosition(), townhall.getYPosition());
     		return Action.createPrimitiveDeposit(peasant.getID(), peasantPos.getDirection(townhallPos));
     	}
+    	
+    	//An unknown StripsAction has been given to us
     	System.err.println("I do not know how to create this action.");
     	return null;
     }
 
-    /*private void assignPeasantId(int id) {
-		Set<Entry<Integer, Integer>> peasants = peasantIdMap.entrySet();
-		for(Entry<Integer,Integer> p : peasants){
-			if(p.getValue() == -1){
-				peasantIdMap.put(p.getKey(), id);
-				System.out.println("Matched " + p.getKey() + " to "+id);
-				return;
-			}
-		}
-	}
-*/
 	@Override
     public void terminalStep(State.StateView stateView, History.HistoryView historyView) {
 

@@ -11,6 +11,7 @@ public class Move_To_Townhall implements StripsAction{
 	public final int townhall;
 	public final int dist;
 	
+	//We will try to move peasant p to the townhall
 	public Move_To_Townhall(Peasant p, int townhallId, int dist){
 		peasant = p;
 		townhall = townhallId;
@@ -19,13 +20,14 @@ public class Move_To_Townhall implements StripsAction{
 	
 	@Override
 	public boolean preconditionsMet(GameState state) {
+		//The peasant must not already be at the townhall
 		return (peasant.isAtTownhall != townhall);
 			
 	}
 
 	@Override
 	public GameState apply(GameState state) {
-		//System.out.println("Moving to townhall");
+		//The resulting state has the peasant at the townhall
 		return new GameState(state, peasant, new Peasant(peasant.id, peasant.carrying, -1, townhall), this, dist);
 	}
 	
