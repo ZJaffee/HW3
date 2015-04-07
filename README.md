@@ -31,6 +31,11 @@ Heuristic = Minimum number of turns estimated to reach goal / number of peasants
  The nature of the min value keeps our heuristic admissible.  
  Since the MIN_NUM_TURNS_TO_GET_RESOURCE is calculated, our solution should still be optimal in different maps.
  
- 
 We do not implement the Movek, Harvestk, etc actions that the assignment suggests.  Instead, we calculate cost in the way we specified, and schedule
 accordingly in PEAgent.  PEAgent looks ahead in the plan to be able to return multiple, parallel actions.
+
+The STRIPS Plan is saved in the saves directory -- we did not change the file write function that was included at all.
+The toStrings are meant to be descriptive, saying things like
+Peasant 1 is moving to resource 2
+Peasant 1 is collecting GOLD from resource 2, etc.
+The save file overwrites each time you run.
