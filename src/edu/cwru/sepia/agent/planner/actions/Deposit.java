@@ -48,4 +48,9 @@ public class Deposit implements StripsAction{
 	public int getPeasantId(){
 		return peasant.id;
 	}
+	
+	@Override
+	public String toString(){
+		return "Peasant "+peasant.id+" is depositing its "+peasant.carrying;
+	}
 }

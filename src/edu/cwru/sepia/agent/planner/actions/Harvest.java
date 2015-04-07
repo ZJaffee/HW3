@@ -46,5 +46,11 @@ public abstract class Harvest implements StripsAction{
 	public int getPeasantId(){
 		return peasant.id;
 	}
+	
+
+	@Override
+	public String toString(){
+		return "Peasant "+peasant.id+" is harvesting "+getResourceType()+" from resource "+resource.id;
+	}
 
 }

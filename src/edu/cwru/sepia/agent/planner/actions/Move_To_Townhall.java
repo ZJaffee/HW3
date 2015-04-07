@@ -36,4 +36,8 @@ public class Move_To_Townhall implements StripsAction{
 		return peasant.id;
 	}
 
+	@Override
+	public String toString(){
+		return "Peasant "+peasant.id+" is moving to the townhall.";
+	}
 }

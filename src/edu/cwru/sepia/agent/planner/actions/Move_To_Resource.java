@@ -36,4 +36,9 @@ public class Move_To_Resource implements StripsAction{
 		return peasant.id;
 	}
 
+
+	@Override
+	public String toString(){
+		return "Peasant "+peasant.id+" is moving to resource "+resource.id;
+	}
 }

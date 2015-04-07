@@ -20,5 +20,10 @@ public class Build_Peasant implements StripsAction{
 	public int getPeasantId() {
 		return -1;
 	}
+	
+	@Override
+	public String toString(){
+		return "Building a peasant.";
+	}
 
 }

@@ -40,7 +40,6 @@ public class PlannerAgent extends Agent {
     public Map<Integer, Action> initialStep(State.StateView stateView, History.HistoryView historyView) {
 
         Stack<StripsAction> plan = AstarSearch(new GameState(stateView, playernum, requiredGold, requiredWood, buildPeasants));
-        System.out.println(plan);
         if(plan == null) {
             System.err.println("No plan was found");
             System.exit(1);
@@ -145,6 +144,7 @@ public class PlannerAgent extends Agent {
     private Stack<StripsAction> reconstructPath(GameState goalState) {
 		Stack<StripsAction> actions = new Stack<StripsAction>();
 		GameState parent = goalState;
+		System.out.printf("The estimated number of turns to execute this plan is %.0f\n",Math.ceil(goalState.getCost()));
 		while( parent.parent != null ){
 			actions.push(parent.action);
 			parent = parent.parent;
@@ -162,7 +162,6 @@ public class PlannerAgent extends Agent {
      * @param plan Stack of Strips Actions that are written to the text file.
      */
     private void savePlan(Stack<StripsAction> plan) {
-        return;/*
     	if (plan == null) {
             System.err.println("Cannot save null plan");
             return;
@@ -190,6 +189,6 @@ public class PlannerAgent extends Agent {
         } finally {
             if (outputWriter != null)
                 outputWriter.close();
-        }*/
+        }
     }
 }
